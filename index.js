@@ -1,5 +1,3 @@
-
-const investBlock = {}
 let sumOfBlockDepositsMultiplied = 0
 const stakes = {}
 let totalDeposits = 0
@@ -17,7 +15,6 @@ function deposit(user, amount, currentBlock) {
         withdrawAmount = withdraw(user)
     }
     const depositAmount = amount + withdrawAmount
-    investBlock[user] = currentBlock
     stakes[user] = depositAmount
     totalDeposits += depositAmount
     KForUser[user] = K
@@ -26,17 +23,19 @@ function deposit(user, amount, currentBlock) {
     sumOfBlockDepositsMultipliedForUser[user] = (sumOfBlockDepositsMultipliedForUser[user]||0) + amount * currentBlock
     sumOfBlockDepositsMultiplied += sumOfBlockDepositsMultipliedForUser[user]
 
-    LK += depositAmount*(currentBlock*L - K)
+    const weightedAverageInvestBlock = sumOfBlockDepositsMultipliedForUser[user]/stakes[user]
+    LK += depositAmount*(weightedAverageInvestBlock*L - K)
 }
 function withdraw(user) {
     const amount = userBalance(user)
-
-    sumOfBlockDepositsMultiplied -=  sumOfBlockDepositsMultipliedForUser[user]
+    const weightedAverageInvestBlock = sumOfBlockDepositsMultipliedForUser[user]/stakes[user]
+    sumOfBlockDepositsMultiplied -= sumOfBlockDepositsMultipliedForUser[user]
     sumOfBlockDepositsMultipliedForUser[user] = 0
     totalDeposits -= stakes[user]
     stakes[user] = 0
 
-    LK -= stakes[user]*(investBlock[user]*LForUser[user] - KForUser[user])
+
+    LK -= stakes[user]*(weightedAverageInvestBlock*LForUser[user] - KForUser[user])
     return amount
 }
 function distribute(reward, distBlock) {
@@ -105,4 +104,7 @@ deposit(userA, 500, 0)
 deposit(userB, 1000, 0)
 deposit(userA, 500, 25)
 distribute(1000, 50)
+deposit(userA, 1000, 75)
+distribute(1000, 100)
 console.log('userA reward: ' + userReward(userA), 'userB reward: ' + userReward(userB))
+console.log('Total Deposits: ' + getTotalDeposits())
