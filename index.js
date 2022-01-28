@@ -100,11 +100,17 @@ console.log('Total Deposits: ' + getTotalDeposits() + ', Actual Total Deposit: '
 //however it is an issue for smart contracts developed on top of ours because they would use deposit and withdraw constantly
 const userA = 'A'
 const userB = 'B'
+const reward1 = 1000
+const reward2 = 1000
 deposit(userA, 500, 0)
 deposit(userB, 1000, 0)
 deposit(userA, 500, 25)
-distribute(1000, 50)
+distribute(reward1, 50)
+let rewardA = userReward(userA)
+let rewardB = userReward(userB)
 deposit(userA, 1000, 75)
-distribute(1000, 100)
-console.log('userA reward: ' + userReward(userA), 'userB reward: ' + userReward(userB))
-console.log('Total Deposits: ' + getTotalDeposits())
+distribute(reward2, 100)
+rewardA += userReward(userA) //we add rewardA because we withdrawn previous reward
+rewardB = userReward(userB)
+console.log('userA reward: ' + rewardA, 'userB reward: ' + rewardB,', Total reward: ' + (rewardA + rewardB), ', Actual reward: ' + (reward1 + reward2))
+console.log('Total Deposits: ' + getTotalDeposits(),', Actual Total Deposit: ' + (userBalance(userA) + userBalance(userB)))
