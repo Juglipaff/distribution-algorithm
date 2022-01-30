@@ -373,4 +373,106 @@ describe('random scenarios', () => {
         expect(contract.userBalance(userA)).toBeCloseTo(1600, 8)
         expect(contract.userBalance(userB)).toBeCloseTo(1400, 8)
     })
+    describe('6',()=>{
+        const reward = 1200
+        const amount = 1000
+        beforeEach(() => {
+            contract.deposit(userA, amount, 0)
+            contract.withdraw(userA, amount, 5)
+            contract.deposit(userA, amount, 10)
+            contract.withdraw(userA, amount, 15)
+            contract.deposit(userB, amount, 15)
+            contract.withdraw(userB, amount, 20)
+
+            contract.deposit(userB, amount, 25)
+            contract.deposit(userA, amount, 25)
+
+            contract.withdraw(userA, amount, 30)
+            contract.deposit(userA, amount, 35)
+
+            contract.distribute(reward, 50)
+        })
+        test('sum of rewards is consistent',()=>{
+            expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA)).toBeCloseTo(reward/2, 8)
+            expect(contract.userReward(userB)).toBeCloseTo(reward/2, 8)
+        })
+        test('doesnt affect deposits',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(amount+reward/2, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount+reward/2, 8)
+        })
+    })
+
+    describe('7',()=>{
+        const reward = 1200
+        const amount = 1000
+        let _reward = 0
+        beforeEach(() => {
+            contract.deposit(userA, amount, 0)
+            contract.deposit(userB, amount, 0)
+            contract.deposit(userC, amount, 0)
+
+            contract.withdraw(userA, amount - 500, 10)
+            contract.deposit(userA, amount - 500, 10)
+
+            contract.withdraw(userC, amount - 300, 20)
+            contract.deposit(userC, amount - 300, 20)
+
+            contract.withdraw(userA, amount, 30)
+
+            contract.distribute(reward, 50)
+
+            _reward=reward/2
+        })
+        test('sum of rewards is consistent',()=>{
+            expect(contract.userReward(userA) + contract.userReward(userB)+ contract.userReward(userC)).toBeCloseTo(reward, 8)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA)).toBe(0)
+            expect(contract.userReward(userB)).toBeCloseTo(_reward, 8)
+            expect(contract.userReward(userC)).toBeCloseTo(_reward, 8)
+        })
+        test('doesnt affect deposits',()=>{
+            expect(contract.userBalance(userA)).toBe(0)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount+_reward, 8)
+            expect(contract.userBalance(userC)).toBeCloseTo(amount+_reward, 8)
+        })
+    })
+
+    describe('7',()=>{
+        const reward = 1200
+        const amount = 1000
+        beforeEach(() => {
+            contract.deposit(userA, amount, 0)
+            contract.deposit(userB, amount, 0)
+            contract.deposit(userC, amount, 0)
+
+            contract.withdraw(userA, amount - 500, 10)
+            contract.deposit(userA, amount - 500, 10)
+
+            contract.withdraw(userC, amount - 300, 20)
+            contract.deposit(userC, amount - 300, 20)
+
+            contract.withdraw(userA, amount - 500, 25)
+
+            contract.distribute(reward, 50)
+
+        })
+        test('sum of rewards is consistent',()=>{
+            console.log(contract.userReward(userA), contract.userReward(userB), contract.userReward(userC))
+            expect(contract.userReward(userA) + contract.userReward(userB)+ contract.userReward(userC)).toBeCloseTo(reward, 8)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA)).toBe(327.27272727272725)
+            expect(contract.userReward(userB)).toBeCloseTo(436.3636363636363, 8)
+            expect(contract.userReward(userC)).toBeCloseTo(436.3636363636363, 8)
+        })
+        test('doesnt affect deposits',()=>{
+            expect(contract.userBalance(userA)).toBe(amount-500+327.27272727272725)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount+436.3636363636363, 8)
+            expect(contract.userBalance(userC)).toBeCloseTo(amount+436.3636363636363, 8)
+        })
+    })
 })

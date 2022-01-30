@@ -26,14 +26,18 @@ module.exports = class Contract {
         const withdrawAmount = this._withdraw(user)
         const depositAmount = withdrawAmount - amount
         //this.sumOfBlockDepositsMultipliedForUser[user] = depositAmount*currentBlock 
-        this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
+        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] = 0
         //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/stake + depositAmount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake + amount * currentBlock
        // this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake 
+
         if(depositAmount > 0) {
+            this.sumOfBlockDepositsMultipliedForUser[user] -= amount * currentBlock
             this._deposit(user, depositAmount)
+            return
         }
+        this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake + amount * currentBlock
     }
     _deposit(user, amount) {
         this.stakes[user] = amount
@@ -61,6 +65,9 @@ module.exports = class Contract {
     }
 
     userReward(user) {
+        if(this.stakes[user] === 0){
+            return 0
+        }
         return this.K*this.stakes[user] + this.sumOfBlockDepositsMultipliedForUser[user] * this.LForUser[user] - this.KForUser[user]*this.stakes[user] - this.sumOfBlockDepositsMultipliedForUser[user] * this.L 
     }
 
