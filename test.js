@@ -360,4 +360,17 @@ describe('random scenarios', () => {
         expect(contract.userBalance(userA)).toBeCloseTo(1000, 8)
         expect(contract.userBalance(userA)).toBeCloseTo(1000, 8)
     })
+    test('5',()=>{
+        const reward = 1000
+        contract.deposit(userA, 500, 0)
+        contract.withdraw(userA, 500, 25)
+        contract.deposit(userA, 1000, 25)
+        contract.deposit(userB, 1000, 25)
+        contract.distribute(reward, 50) 
+
+
+        expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
+        expect(contract.userBalance(userA)).toBeCloseTo(1500, 8)
+        expect(contract.userBalance(userA)).toBeCloseTo(1500, 8)
+    })
 })
