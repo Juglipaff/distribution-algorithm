@@ -22,16 +22,16 @@ module.exports = class Contract {
         this._deposit(user, depositAmount)
     }
     withdraw(user, amount, currentBlock) {
+        const stake = this.stakes[user]
         const withdrawAmount = this._withdraw(user)
         const depositAmount = withdrawAmount - amount
         //this.sumOfBlockDepositsMultipliedForUser[user] = depositAmount*currentBlock 
-        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
+        this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] = 0
-        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount + depositAmount*currentBlock 
-       // this.sumOfBlockDepositsMultipliedForUser[user] -= amount * (this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount + currentBlock)
-        this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount + amount*currentBlock
+        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/stake + depositAmount*currentBlock 
+        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake + amount * currentBlock
+       // this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake 
         if(depositAmount > 0) {
-            
             this._deposit(user, depositAmount)
         }
     }
@@ -41,7 +41,7 @@ module.exports = class Contract {
         this.KForUser[user] = this.K
         this.LForUser[user] =  this.L
 
-        this.sumOfBlockDepositsMultiplied += this.sumOfBlockDepositsMultipliedForUser[user]
+        this.sumOfBlockDepositsMultiplied += this.sumOfBlockDepositsMultipliedForUser[user] 
         this.LK += this.sumOfBlockDepositsMultipliedForUser[user]*this.L - this.K*this.stakes[user]
     }
     _withdraw(user) {

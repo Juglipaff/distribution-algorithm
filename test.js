@@ -193,12 +193,12 @@ describe('actions dont affect deposits or rewards in an unintended way', () => {
             expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
         })
         test('doesnt affect rewards',()=>{
-            expect(contract.userReward(userA)).toBeCloseTo(amount1*_reward, 8)
-            expect(contract.userReward(userB)).toBeCloseTo(amount2*_reward, 8)
+            expect(contract.userReward(userA)).toBeCloseTo(amount2*_reward, 8)
+            expect(contract.userReward(userB)).toBeCloseTo(amount1*_reward, 8)
         })
         test('doesnt affect deposits',()=>{
-            expect(contract.userBalance(userA)).toBeCloseTo(amount1 + amount1*_reward, 8)
-            expect(contract.userBalance(userB)).toBeCloseTo(amount2 + amount2*_reward, 8)
+            expect(contract.userBalance(userA)).toBeCloseTo(amount2 + amount2*_reward, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount1 + amount1*_reward, 8)
         })
     })
     describe('withdraw doesnt affect parameters in an unintended way if deposits were made on different blocks', () => {
