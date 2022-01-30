@@ -233,12 +233,12 @@ describe('actions dont affect deposits or rewards in an unintended way', () => {
         const amount2 = 1000
         const reward = 1000
         let _reward = 0
+
         beforeEach(() => {
             //make random actions to set variables
             contract.deposit(userB, 1000, 0)
             contract.deposit(userA, 2000, 200)
             contract.withdraw(userA, 1000,300)
-            contract.distribute(1000, 400)
 
             //withdraw all tokens
             contract.withdraw(userB, contract.userBalance(userB), 400)
@@ -249,7 +249,7 @@ describe('actions dont affect deposits or rewards in an unintended way', () => {
             contract.distribute(reward, 500)
             _reward = reward/(amount1+amount2)
         })
-        
+
         test('sum of rewards is consistent',()=>{
             expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
         })

@@ -27,6 +27,7 @@ module.exports = class Contract {
         this.sumOfBlockDepositsMultipliedForUser[user] = depositAmount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] = 0
+        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount
         if(depositAmount > 0) {
             this._deposit(user, depositAmount)
         }
