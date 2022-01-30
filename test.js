@@ -236,7 +236,7 @@ describe('actions dont affect deposits or rewards in an unintended way', () => {
 
             //deposit same amount on different blocks
             contract.deposit(userA, amount1, 0)
-            contract.withdraw(userA, amount1, 4)
+            contract.withdraw(userA, amount1, 5)
             contract.deposit(userA, amount1, 10)
             contract.deposit(userB, amount2, 10)
             contract.distribute(reward, 20)
@@ -245,12 +245,12 @@ describe('actions dont affect deposits or rewards in an unintended way', () => {
             expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
         })
         test('doesnt affect rewards',()=>{
-            expect(contract.userReward(userA)).toBeCloseTo(500, 8)
-            expect(contract.userReward(userB)).toBeCloseTo(500, 8)
+            expect(contract.userReward(userA)).toBeCloseTo(600, 8)
+            expect(contract.userReward(userB)).toBeCloseTo(400, 8)
         })
         test('doesnt affect deposits',()=>{
-            expect(contract.userBalance(userA)).toBeCloseTo(1500, 8)
-            expect(contract.userBalance(userB)).toBeCloseTo(1500, 8)
+            expect(contract.userBalance(userA)).toBeCloseTo(1600, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(1400, 8)
         })
     })
 
@@ -370,7 +370,7 @@ describe('random scenarios', () => {
 
 
         expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(reward, 8)
-        expect(contract.userBalance(userA)).toBeCloseTo(1500, 8)
-        expect(contract.userBalance(userA)).toBeCloseTo(1500, 8)
+        expect(contract.userBalance(userA)).toBeCloseTo(1600, 8)
+        expect(contract.userBalance(userB)).toBeCloseTo(1400, 8)
     })
 })
