@@ -24,10 +24,11 @@ module.exports = class Contract {
     withdraw(user, amount, currentBlock) {
         const withdrawAmount = this._withdraw(user)
         const depositAmount = withdrawAmount - amount
-        this.sumOfBlockDepositsMultipliedForUser[user] = depositAmount*currentBlock 
+        //this.sumOfBlockDepositsMultipliedForUser[user] = depositAmount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] -= amount*currentBlock 
         //this.sumOfBlockDepositsMultipliedForUser[user] = 0
-        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount
+        //this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount + depositAmount*currentBlock 
+        this.sumOfBlockDepositsMultipliedForUser[user] -= amount* this.sumOfBlockDepositsMultipliedForUser[user]/withdrawAmount
         if(depositAmount > 0) {
             this._deposit(user, depositAmount)
         }
