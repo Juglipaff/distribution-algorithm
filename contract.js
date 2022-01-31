@@ -8,6 +8,7 @@ module.exports = class Contract {
         this.KForUser = {}
         this.LForUser = {}
         this.LK = 0
+        this.lastDistribution = 0
     
         this.sumOfBlockDepositsMultipliedForUser = {}
     }
@@ -62,7 +63,8 @@ module.exports = class Contract {
         if(this.stakes[user] === 0){
             return 0
         }
-        return this.K*this.stakes[user] + this.sumOfBlockDepositsMultipliedForUser[user] * this.LForUser[user] - this.KForUser[user]*this.stakes[user] - this.sumOfBlockDepositsMultipliedForUser[user] * this.L 
+        const weightedAverageBlock = this.sumOfBlockDepositsMultipliedForUser[user]/this.stakes[user]
+        return this.stakes[user] *(this.K + weightedAverageBlock * this.LForUser[user] - this.KForUser[user] - weightedAverageBlock * this.L)
     }
 
     userBalance(user) {
