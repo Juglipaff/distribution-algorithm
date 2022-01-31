@@ -8,7 +8,6 @@ module.exports = class Contract {
         this.KForUser = {}
         this.LForUser = {}
         this.LK = 0
-        this.lastDistribution = 0
     
         this.sumOfBlockDepositsMultipliedForUser = {}
     }
