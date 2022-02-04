@@ -694,15 +694,6 @@ describe('random scenarios', () => {
            rewardC8 = contract.userReward(userC)
            rewardD8 = contract.userReward(userD)
            rewardE8 = contract.userReward(userE)
-           console.log( 
-                rewardA8,
-                rewardB8,
-                rewardC8,
-                rewardD8,
-                rewardE8
-            )
-
-           //try to withdraw from previos(widthout deposit)
 
         })
         test('rewards are right after the first distribution',()=>{
