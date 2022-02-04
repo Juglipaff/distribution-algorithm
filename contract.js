@@ -1,76 +1,117 @@
 module.exports = class Contract {
     constructor() {
-        this.sumOfBlockDepositsMultiplied = 0
         this.stakes = {}
         this.totalDeposits = 0
+        this.previosDeposit = 0
+        this.previosDepositForUser={}
+
+
         this.K = 0
         this.L = 0
+
+        this.lastDistBlock = 0
+
+        this.lastDistBlockForUser = {}
+
+        this.cumulativeBlockDepositsMultiplied = 0
+        this.CBD = {}
+        this.nextDistBlock={}
+        this.appliedSum= {}
+
         this.KForUser = {}
-        this.LForUser = {}
-        this.LK = 0
-    
-        this.sumOfBlockDepositsMultipliedForUser = {}
+        this.Ks = {}
+
+        this.reward = {}
+        this.Ls = {}
+        this.totalReward = 0
     }
 
     deposit(user, amount, currentBlock) {
-        let withdrawAmount = 0
-        if(this.stakes[user]!==undefined && this.stakes[user] > 0){
-            withdrawAmount = this._withdraw(user)
+        if(this.appliedSum[user]===undefined){
+            this.appliedSum[user]={}
         }
-        this.sumOfBlockDepositsMultipliedForUser[user] = (this.sumOfBlockDepositsMultipliedForUser[user]||0) + amount * currentBlock
-        const depositAmount = amount + withdrawAmount
-        this._deposit(user, depositAmount)
-    }
-    withdraw(user, amount, currentBlock) {
-        const stake = this.stakes[user]
-        const withdrawAmount = this._withdraw(user)
-        const depositAmount = withdrawAmount - amount
+        if(!this.appliedSum[user][this.lastDistBlock]){
+            this.appliedSum[user][this.lastDistBlock] = true
+            this.reward[user] = (this.reward[user]||0) + this.userReward(user)
 
-        if(depositAmount > 0) {
-            this.sumOfBlockDepositsMultipliedForUser[user] -= amount * currentBlock
-            this._deposit(user, depositAmount)
-            return
+            this.CBD[user] = 0
         }
-        this.sumOfBlockDepositsMultipliedForUser[user] -= amount * this.sumOfBlockDepositsMultipliedForUser[user]/stake + amount * currentBlock
-    }
-    _deposit(user, amount) {
-        this.stakes[user] = amount
+
+        this.cumulativeBlockDepositsMultiplied += this.totalDeposits*(currentBlock - this.previosDeposit) 
+
+        const lastUserBlock = ((this.previosDepositForUser[user]||0) < this.lastDistBlock) ? this.lastDistBlock : (this.previosDepositForUser[user]||0)
+        this.CBD[user] = (this.CBD[user]||0) + (this.stakes[user]||0)*(currentBlock - lastUserBlock)
+
+        this.stakes[user] = (this.stakes[user]||0) + amount
         this.totalDeposits += amount
-        this.KForUser[user] = this.K
-        this.LForUser[user] =  this.L
 
-        this.sumOfBlockDepositsMultiplied += this.sumOfBlockDepositsMultipliedForUser[user] 
-        this.LK += this.sumOfBlockDepositsMultipliedForUser[user]*this.L - this.K*this.stakes[user]
-    }
-    _withdraw(user) {
-        const amount = this.userBalance(user)
-        this.LK -= this.sumOfBlockDepositsMultipliedForUser[user]*this.LForUser[user] - this.KForUser[user]*this.stakes[user]
-        this.sumOfBlockDepositsMultiplied -= this.sumOfBlockDepositsMultipliedForUser[user]
-        this.totalDeposits -= this.stakes[user]
-        this.stakes[user] = 0
+        this.previosDepositForUser[user] = currentBlock
+        this.previosDeposit = currentBlock
 
-        return amount
+        this.lastDistBlockForUser[user] = this.lastDistBlock 
+        this.KForUser[user] = this.K 
     }
 
-    distribute(reward, distBlock) {
-        const _K = reward*distBlock/(distBlock * this.totalDeposits - this.sumOfBlockDepositsMultiplied)
-        this.K += _K
-        this.L += _K/distBlock
-    }
-
-    userReward(user) {
-        if(this.stakes[user] === 0){
-            return 0
+    withdraw(user, amount, currentBlock) {
+        if(!this.appliedSum[user][this.lastDistBlock]){
+            this.appliedSum[user][this.lastDistBlock] = true
+            this.reward[user] += this.userReward(user) 
+            
+            this.CBD[user] = 0
         }
-        const weightedAverageBlock = this.sumOfBlockDepositsMultipliedForUser[user]/this.stakes[user]
-        return this.stakes[user] *(this.K + weightedAverageBlock * this.LForUser[user] - this.KForUser[user] - weightedAverageBlock * this.L)
+       
+        this.cumulativeBlockDepositsMultiplied += this.totalDeposits*(currentBlock - this.previosDeposit)
+        
+        const lastUserBlock = (this.previosDepositForUser[user] < this.lastDistBlock) ? this.lastDistBlock : this.previosDepositForUser[user]
+        this.CBD[user] += this.stakes[user]*(currentBlock - lastUserBlock)
+
+        this.totalDeposits -= amount
+        this.stakes[user] -= amount
+
+        this.previosDepositForUser[user] = currentBlock
+        this.previosDeposit = currentBlock
+
+        this.lastDistBlockForUser[user] = this.lastDistBlock 
+        this.KForUser[user] = this.K 
     }
 
-    userBalance(user) {
-        return this.stakes[user] + this.userReward(user)
+    distribute(reward, distBlock,log) {
+        const _K = reward/(this.cumulativeBlockDepositsMultiplied + this.totalDeposits*(distBlock - this.previosDeposit))
+        this.K += reward/(this.cumulativeBlockDepositsMultiplied + this.totalDeposits*(distBlock - this.previosDeposit))
+        this.L += _K * (distBlock - this.lastDistBlock)
+
+        this.nextDistBlock[this.lastDistBlock] = distBlock
+        
+        this.Ks[this.lastDistBlock] = this.K
+        this.Ls[this.lastDistBlock] = this.L
+
+        this.lastDistBlock = distBlock
+        this.cumulativeBlockDepositsMultiplied = 0
+        this.previosDeposit = distBlock
+
+        this.totalReward += reward
+    }
+
+    userReward(user,log) {
+        let nextDistBlock
+        if(this.lastDistBlockForUser[user]===undefined){
+            nextDistBlock = this.lastDistBlock
+        }else{
+            nextDistBlock = this.nextDistBlock[this.lastDistBlockForUser[user]] || this.lastDistBlock
+        }
+        const CBD = (this.CBD[user]||0) + (this.stakes[user]||0) * (nextDistBlock - (this.previosDepositForUser[user]||0))
+        //can be negative i think, use const lastUserBlock = (this.previosDepositForUser[user] < this.lastDistBlock) ? this.lastDistBlock : this.previosDepositForUser[user]
+        const Luser =  this.Ls[this.lastDistBlockForUser[user]]===undefined ? this.L : this.Ls[this.lastDistBlockForUser[user]]
+        const CBD2 = (this.stakes[user]||0) * (this.L - Luser) 
+
+        return (this.reward[user]||0) + ((this.Ks[this.lastDistBlockForUser[user]]||this.K) - this.KForUser[user]||0) * CBD + CBD2
+    }
+
+    userBalance(user,log) {
+        return this.stakes[user] + this.userReward(user,log)
     }
 
     getTotalDeposits() {
-        return this.totalDeposits +this.totalDeposits*this.K + this.LK - this.L*this.sumOfBlockDepositsMultiplied
+        return this.totalReward + this.totalDeposits
     }
 }
