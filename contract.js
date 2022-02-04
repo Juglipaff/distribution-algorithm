@@ -85,23 +85,27 @@ module.exports = class Contract {
         this.cumulativeBlockDeposits = 0
     }
 
-    userReward(user) {
+    userReward(user,log) {
         let nextDistributionForUser
         if(this.lastDistributionForUser[user]===undefined || !this.nextDistribution[this.lastDistributionForUser[user]]){//not sure how to handle undefined in solidity since mappings have 0 as their default value
             nextDistributionForUser = this.lastDistribution
         }else{
             nextDistributionForUser = this.nextDistribution[this.lastDistributionForUser[user]]
         }
-        //can be negative i think, use (this.previosDepositForUser[user] < this.lastDistBlock) ? this.lastDistBlock : this.previosDepositForUser[user]
-        const _cumulativeBlockDepositsForUser = (this.cumulativeBlockDepositsForUser[user]||0) + (this.stakes[user]||0) * (nextDistributionForUser - (this.previosDepositForUser[user]||0))
-        
+
+        const _previosDepositForUser = (this.previosDepositForUser[user]||0) > nextDistributionForUser ? nextDistributionForUser : (this.previosDepositForUser[user]||0)
+        const _cumulativeBlockDepositsForUser = (this.cumulativeBlockDepositsForUser[user]||0) + (this.stakes[user]||0) * (nextDistributionForUser - _previosDepositForUser)
         const nextK = this.KOnBlock[this.lastDistributionForUser[user]] === undefined ? this.K : this.KOnBlock[this.lastDistributionForUser[user]]//not sure how to handle undefined in solidity since mappings have 0 as their default value
         const deltaK = nextK - (this.KForUser[user]||0)
         const rewardsBeforeDistibution = _cumulativeBlockDepositsForUser * deltaK
         
-        const nextL = this.LOnBlock[this.lastDistributionForUser[user]]===undefined ? this.L : this.LOnBlock[this.lastDistributionForUser[user]]//not sure how to handle undefined in solidity since mappings have 0 as their default value
+        const nextL = this.LOnBlock[this.lastDistributionForUser[user]] === undefined ? this.L : this.LOnBlock[this.lastDistributionForUser[user]]//not sure how to handle undefined in solidity since mappings have 0 as their default value
         const deltaLForUser = this.L - nextL
         const rewardsAfterDistribution = (this.stakes[user]||0) * deltaLForUser
+
+        if(log){
+            console.log(rewardsBeforeDistibution,rewardsAfterDistribution, nextDistributionForUser, this.previosDepositForUser[user]||0 )
+        }
 
         return (this.rewards[user]||0) + rewardsBeforeDistibution + rewardsAfterDistribution
     }

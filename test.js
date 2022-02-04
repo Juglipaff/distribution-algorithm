@@ -771,10 +771,23 @@ describe('random scenarios', () => {
             contract.distribute(1000, 153)
         })
         test('doesnt affect rewards',()=>{
-            expect(contract.userReward(userA,true)).toBeCloseTo(4000, 8)
+            expect(contract.userReward(userA)).toBeCloseTo(4000, 8)
         })
         test('doesnt affect deposits',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(5000, 8)
+        })
+    }),
+    describe('13',()=>{
+        beforeEach(() => {
+            contract.deposit(userA, 100, 0)
+            contract.distribute(100, 50)
+            contract.deposit(userB, 100, 100)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA) + contract.userReward(userB, true)).toBeCloseTo(100, 8)
+        })
+        test('doesnt affect deposits',()=>{
+            expect(contract.userBalance(userA) + contract.userBalance(userB)).toBeCloseTo(300, 8)
         })
     })
 })
