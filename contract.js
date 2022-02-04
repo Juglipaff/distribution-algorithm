@@ -85,7 +85,7 @@ module.exports = class Contract {
         this.cumulativeBlockDeposits = 0
     }
 
-    userReward(user,log) {
+    userReward(user) {
         let nextDistributionForUser
         if(this.lastDistributionForUser[user]===undefined || !this.nextDistribution[this.lastDistributionForUser[user]]){//not sure how to handle undefined in solidity since mappings have 0 as their default value
             nextDistributionForUser = this.lastDistribution
@@ -102,10 +102,6 @@ module.exports = class Contract {
         const nextL = this.LOnBlock[this.lastDistributionForUser[user]] === undefined ? this.L : this.LOnBlock[this.lastDistributionForUser[user]]//not sure how to handle undefined in solidity since mappings have 0 as their default value
         const deltaLForUser = this.L - nextL
         const rewardsAfterDistribution = (this.stakes[user]||0) * deltaLForUser
-
-        if(log){
-            console.log(rewardsBeforeDistibution,rewardsAfterDistribution, nextDistributionForUser, this.previosDepositForUser[user]||0 )
-        }
 
         return (this.rewards[user]||0) + rewardsBeforeDistibution + rewardsAfterDistribution
     }

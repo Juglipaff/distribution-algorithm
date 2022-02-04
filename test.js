@@ -784,7 +784,7 @@ describe('random scenarios', () => {
             contract.deposit(userB, 100, 100)
         })
         test('doesnt affect rewards',()=>{
-            expect(contract.userReward(userA) + contract.userReward(userB, true)).toBeCloseTo(100, 8)
+            expect(contract.userReward(userA) + contract.userReward(userB)).toBeCloseTo(100, 8)
         })
         test('doesnt affect deposits',()=>{
             expect(contract.userBalance(userA) + contract.userBalance(userB)).toBeCloseTo(300, 8)
