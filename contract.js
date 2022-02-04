@@ -4,43 +4,38 @@ module.exports = class Contract {
         this.totalDeposits = 0
         this.previosDeposit = 0
         this.previosDepositForUser={}
-
-
         this.K = 0
         this.L = 0
-
-        this.lastDistBlock = 0
-
-        this.lastDistBlockForUser = {}
-
-        this.cumulativeBlockDepositsMultiplied = 0
-        this.CBD = {}
-        this.nextDistBlock={}
-        this.appliedSum= {}
+        this.lastDistribution = 0
+        this.lastDistributionForUser = {}
+        this.cumulativeBlockDeposits = 0
+        this.cumulativeBlockDepositsForUser = {}
+        this.nextDistribution={}
+        this.hasDeposited= {}
 
         this.KForUser = {}
-        this.Ks = {}
+        this.KOnBlock = {}
 
-        this.reward = {}
-        this.Ls = {}
-        this.totalReward = 0
+        this.rewards = {}
+        this.LOnBlock = {}
+        this.cumulativeRewards = 0
     }
 
     deposit(user, amount, currentBlock) {
-        if(this.appliedSum[user]===undefined){
-            this.appliedSum[user]={}
+        if(this.hasDeposited[user]===undefined){
+            this.hasDeposited[user]={}
         }
-        if(!this.appliedSum[user][this.lastDistBlock]){
-            this.appliedSum[user][this.lastDistBlock] = true
-            this.reward[user] = (this.reward[user]||0) + this.userReward(user)
+        if(!this.hasDeposited[user][this.lastDistribution]){
+            this.hasDeposited[user][this.lastDistribution] = true
+            this.rewards[user] = (this.rewards[user]||0) + this.userReward(user)
 
-            this.CBD[user] = 0
+            this.cumulativeBlockDepositsForUser[user] = 0
         }
 
-        this.cumulativeBlockDepositsMultiplied += this.totalDeposits*(currentBlock - this.previosDeposit) 
+        this.cumulativeBlockDeposits += this.totalDeposits*(currentBlock - this.previosDeposit) 
 
-        const lastUserBlock = ((this.previosDepositForUser[user]||0) < this.lastDistBlock) ? this.lastDistBlock : (this.previosDepositForUser[user]||0)
-        this.CBD[user] = (this.CBD[user]||0) + (this.stakes[user]||0)*(currentBlock - lastUserBlock)
+        const previousDepositBlock = ((this.previosDepositForUser[user]||0) < this.lastDistribution) ? this.lastDistribution : (this.previosDepositForUser[user]||0)
+        this.cumulativeBlockDepositsForUser[user] = (this.cumulativeBlockDepositsForUser[user]||0) + (this.stakes[user]||0)*(currentBlock - previousDepositBlock)
 
         this.stakes[user] = (this.stakes[user]||0) + amount
         this.totalDeposits += amount
@@ -48,22 +43,22 @@ module.exports = class Contract {
         this.previosDepositForUser[user] = currentBlock
         this.previosDeposit = currentBlock
 
-        this.lastDistBlockForUser[user] = this.lastDistBlock 
+        this.lastDistributionForUser[user] = this.lastDistribution 
         this.KForUser[user] = this.K 
     }
 
     withdraw(user, amount, currentBlock) {
-        if(!this.appliedSum[user][this.lastDistBlock]){
-            this.appliedSum[user][this.lastDistBlock] = true
-            this.reward[user] += this.userReward(user) 
+        if(!this.hasDeposited[user][this.lastDistribution]){
+            this.hasDeposited[user][this.lastDistribution] = true
+            this.rewards[user] += this.userReward(user) 
             
-            this.CBD[user] = 0
+            this.cumulativeBlockDepositsForUser[user] = 0
         }
        
-        this.cumulativeBlockDepositsMultiplied += this.totalDeposits*(currentBlock - this.previosDeposit)
+        this.cumulativeBlockDeposits += this.totalDeposits*(currentBlock - this.previosDeposit)
         
-        const lastUserBlock = (this.previosDepositForUser[user] < this.lastDistBlock) ? this.lastDistBlock : this.previosDepositForUser[user]
-        this.CBD[user] += this.stakes[user]*(currentBlock - lastUserBlock)
+        const previosDepositBlock = (this.previosDepositForUser[user] < this.lastDistribution) ? this.lastDistribution : this.previosDepositForUser[user]
+        this.cumulativeBlockDepositsForUser[user] += this.stakes[user]*(currentBlock - previosDepositBlock)
 
         this.totalDeposits -= amount
         this.stakes[user] -= amount
@@ -71,40 +66,41 @@ module.exports = class Contract {
         this.previosDepositForUser[user] = currentBlock
         this.previosDeposit = currentBlock
 
-        this.lastDistBlockForUser[user] = this.lastDistBlock 
+        this.lastDistributionForUser[user] = this.lastDistribution 
         this.KForUser[user] = this.K 
     }
 
-    distribute(reward, distBlock,log) {
-        const _K = reward/(this.cumulativeBlockDepositsMultiplied + this.totalDeposits*(distBlock - this.previosDeposit))
-        this.K += reward/(this.cumulativeBlockDepositsMultiplied + this.totalDeposits*(distBlock - this.previosDeposit))
-        this.L += _K * (distBlock - this.lastDistBlock)
+    distribute(reward, currentBlock) {
+        const _K = reward/(this.cumulativeBlockDeposits + this.totalDeposits*(currentBlock - this.previosDeposit))
+        this.K += _K
+        this.L += _K * (currentBlock - this.lastDistribution)
 
-        this.nextDistBlock[this.lastDistBlock] = distBlock
-        
-        this.Ks[this.lastDistBlock] = this.K
-        this.Ls[this.lastDistBlock] = this.L
+        this.nextDistribution[this.lastDistribution] = currentBlock
+        this.KOnBlock[this.lastDistribution] = this.K
+        this.LOnBlock[this.lastDistribution] = this.L
 
-        this.lastDistBlock = distBlock
-        this.cumulativeBlockDepositsMultiplied = 0
-        this.previosDeposit = distBlock
-
-        this.totalReward += reward
+        this.lastDistribution = currentBlock
+        this.previosDeposit = currentBlock
+        this.cumulativeRewards += reward
+        this.cumulativeBlockDeposits = 0
     }
 
-    userReward(user,log) {
-        let nextDistBlock
-        if(this.lastDistBlockForUser[user]===undefined){
-            nextDistBlock = this.lastDistBlock
+    userReward(user) {
+        let nextDistributionForUser
+        if(this.lastDistributionForUser[user]===undefined || this.nextDistribution[this.lastDistributionForUser[user]] === undefined){
+            nextDistributionForUser = this.lastDistribution
         }else{
-            nextDistBlock = this.nextDistBlock[this.lastDistBlockForUser[user]] || this.lastDistBlock
+            nextDistributionForUser = this.nextDistribution[this.lastDistributionForUser[user]]
         }
-        const CBD = (this.CBD[user]||0) + (this.stakes[user]||0) * (nextDistBlock - (this.previosDepositForUser[user]||0))
         //can be negative i think, use const lastUserBlock = (this.previosDepositForUser[user] < this.lastDistBlock) ? this.lastDistBlock : this.previosDepositForUser[user]
-        const Luser =  this.Ls[this.lastDistBlockForUser[user]]===undefined ? this.L : this.Ls[this.lastDistBlockForUser[user]]
-        const CBD2 = (this.stakes[user]||0) * (this.L - Luser) 
+        const _cumulativeBlockDepositsForUser = (this.cumulativeBlockDepositsForUser[user]||0) + (this.stakes[user]||0) * (nextDistributionForUser - (this.previosDepositForUser[user]||0))
+        const deltaKForUser = ((this.KOnBlock[this.lastDistributionForUser[user]]||this.K) - (this.KForUser[user]||0))
+        const rewardsBeforeDistibution = _cumulativeBlockDepositsForUser * deltaKForUser
+        
+        const deltaLForUser = this.L - (this.LOnBlock[this.lastDistributionForUser[user]] || this.L)
+        const rewardsAfterDistribution = (this.stakes[user]||0) * deltaLForUser
 
-        return (this.reward[user]||0) + ((this.Ks[this.lastDistBlockForUser[user]]||this.K) - this.KForUser[user]||0) * CBD + CBD2
+        return (this.rewards[user]||0) + rewardsBeforeDistibution + rewardsAfterDistribution
     }
 
     userBalance(user,log) {
@@ -112,6 +108,6 @@ module.exports = class Contract {
     }
 
     getTotalDeposits() {
-        return this.totalReward + this.totalDeposits
+        return this.cumulativeRewards + this.totalDeposits
     }
 }

@@ -637,7 +637,7 @@ describe('random scenarios', () => {
            rewardD1 = contract.userReward(userD)
            rewardE1 = contract.userReward(userE)
            contract.deposit(userD, 500, 50)
-           //rewardB = contract.userReward(userB)
+
            contract.deposit(userB, 1500, 60)
            contract.distribute(1000, 100)
 
@@ -759,5 +759,22 @@ describe('random scenarios', () => {
         test('sum of stakes is consistent',()=>{
             expect(contract.userBalance(userA) + contract.userBalance(userB) + contract.userBalance(userC) + contract.userBalance(userD) + contract.userBalance(userE)).toBeCloseTo(contract.getTotalDeposits(), 8)
         })
-     })
+     }),
+     describe('12',()=>{
+        beforeEach(() => {
+            contract.deposit(userA, 1000, 0)
+            contract.distribute(0, 50)
+
+            contract.distribute(1000, 100)
+            contract.distribute(1000, 151)
+            contract.distribute(1000, 152)
+            contract.distribute(1000, 153)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA,true)).toBeCloseTo(4000, 8)
+        })
+        test('doesnt affect deposits',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(5000, 8)
+        })
+    })
 })
