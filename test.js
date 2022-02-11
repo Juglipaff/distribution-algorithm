@@ -764,13 +764,66 @@ describe('random scenarios', () => {
             expect(contract.userBalance(userA)).toBeCloseTo(5000, 8)
         })
     })
-    /*
-    *
-    *
-    * 
-    * 
-    * 
-    */ 
+
+    describe('rewards distributed correctly after multiple distributions for multiple users',()=>{
+        const amount1 = 1000
+        const amount2 = 300
+        const amount3 = 800
+        const reward1 = 0
+        const reward2 = 500
+        const reward3 = 1000
+        const reward4 = 700
+
+        const block1 = 0
+        const block2 = 5
+        const block3 = 20
+        const block4 = 50
+        const block5 = 100
+        const block6 = 151
+        const block7 = 152
+
+        const totalDepositAge1 = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 + amount3)
+        const totalDepositAge2 = (block5 - block4)*(amount1 + amount2 + amount3 + reward1)
+        const totalDepositAge3 = (block6 - block5)*(amount1 + amount2 + amount3 + reward1 + reward2)
+        const totalDepositAge4 = (block7 - block6)*(amount1 + amount2 + amount3 + reward1 + reward2 + reward3)
+
+        const userADepositAge1 = (block4 - block1)*amount1 
+        const userADepositAge2 = (block5 - block4)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
+        const userADepositAge3 = (block6 - block5)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2)
+        const userADepositAge4 = (block7 - block6)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2 + reward3*userADepositAge3/totalDepositAge3)
+
+        const userBDepositAge1 = (block4 - block2)*amount2
+        const userBDepositAge2 = (block5 - block4)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
+        const userBDepositAge3 = (block6 - block5)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2)
+        const userBDepositAge4 = (block7 - block6)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2 + reward3*userBDepositAge3/totalDepositAge3)
+
+        const userCDepositAge1 = (block4 - block3)*amount3
+        const userCDepositAge2 = (block5 - block4)*(amount3 + reward1*userCDepositAge1/totalDepositAge1)
+        const userCDepositAge3 = (block6 - block5)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 + reward2*userCDepositAge2/totalDepositAge2)
+        const userCDepositAge4 = (block7 - block6)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 + reward2*userCDepositAge2/totalDepositAge2 + reward3*userCDepositAge3/totalDepositAge3)
+
+        beforeEach(() => {
+            contract.deposit(userA, amount1, block1)
+            contract.deposit(userB, amount2, block2)
+            contract.deposit(userC, amount3, block3)
+
+            contract.distribute(reward1, block4)
+            contract.distribute(reward2, block5)
+            contract.distribute(reward3, block6)
+            contract.distribute(reward4, block7)
+        })
+        test('doesnt affect rewards',()=>{
+            expect(contract.userReward(userA)).toBeCloseTo(reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2 + reward3*userADepositAge3/totalDepositAge3 + reward4*userADepositAge4/totalDepositAge4, 8)
+            expect(contract.userReward(userB)).toBeCloseTo(reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2 + reward3*userBDepositAge3/totalDepositAge3 + reward4*userBDepositAge4/totalDepositAge4, 8)
+            expect(contract.userReward(userC)).toBeCloseTo(reward1*userCDepositAge1/totalDepositAge1 + reward2*userCDepositAge2/totalDepositAge2 + reward3*userCDepositAge3/totalDepositAge3 + reward4*userCDepositAge4/totalDepositAge4, 8)
+        })
+        test('sum of rewards is consistent',()=>{
+            expect(contract.userReward(userA) + contract.userReward(userB) + contract.userReward(userC)).toBeCloseTo(reward1 + reward2 + reward3 + reward4, 8)
+        })
+        test('sum of balances is consistent',()=>{
+            expect(contract.userBalance(userA) + contract.userBalance(userB) + contract.userBalance(userC)).toBeCloseTo(amount1 + amount2 + amount3 + reward1 + reward2 + reward3 + reward4, 8)
+        })
+    })
     describe('rewards distributed correctly if no distributions were made for one of the users', ()=>{
         beforeEach(() => {
             contract.deposit(userA, 100, 0)
