@@ -817,6 +817,7 @@ describe('random scenarios', () => {
             contract.setExpectedReward(100, 50)
             contract.deposit(userA, 100, 0)
             contract.distribute(100, 50)
+            contract.setExpectedReward(0, 200)
             contract.deposit(userB, 100, 100)
         })
         test('doesnt affect rewards',()=>{
