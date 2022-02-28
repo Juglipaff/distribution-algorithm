@@ -822,7 +822,7 @@ describe('random scenarios', () => {
         })
         test('doesnt affect rewards',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(200, 8)
-            expect(contract.userBalance(userB)).toBe(100, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(100, 8)
         })
         test('doesnt affect deposits',()=>{
             expect(contract.userBalance(userA) + contract.userBalance(userB)).toBeCloseTo(300, 8)
