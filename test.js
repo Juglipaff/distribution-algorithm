@@ -223,8 +223,7 @@ describe('rewards distributed correctly', () => {
         const block3 = 100
         const block4 = 100
 
-       // const totalDepositAge =  (block4 - block1)*(amount1 - amount3) + (block4 - block2)*amount2  //(block4 - block1)*(amount1 + amount2 - amount3) // (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
-        const userADepositAge = (block4 - block1)*(amount1 - amount3) //(block3 - block1)*amount1 + (block4 - block3)*(amount1 - amount3)
+        const userADepositAge = (block4 - block1)*(amount1 - amount3) 
         const userBDepositAge = (block4 - block2)*amount2
         const totalDepositAge = userADepositAge + userBDepositAge
 
@@ -254,9 +253,8 @@ describe('rewards distributed correctly', () => {
         const block3 = 400
         const block4 = 400
 
-        //const totalDepositAge = (block4 - block1)*amount1 + (block4 - block2)*(amount2- amount3) /*+ (block4 - block3)*(amount2 - amount3)*////(block4 - block1)*(amount1 + amount2 - amount3)//(block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
         const userADepositAge = (block4 - block1)*amount1 
-        const userBDepositAge = (block4 - block2)*(amount2 - amount3) //(block3 - block2)*amount2 + (block4 - block3)*(amount2 - amount3)
+        const userBDepositAge = (block4 - block2)*(amount2 - amount3) 
         const totalDepositAge = userADepositAge + userBDepositAge
         beforeEach(() => {
             contract.setExpectedReward(reward, block4)
