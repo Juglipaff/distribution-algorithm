@@ -96,13 +96,13 @@ describe('distributes', () => {
 
 
         contract.setExpectedReward(reward, block3)
-        contract.deposit(userA, amount1, block1, true)
-        contract.deposit(userB, amount2, block2, true)
+        contract.deposit(userA, amount1, block1)
+        contract.deposit(userB, amount2, block2)
         contract.distribute(reward, block3)
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2)
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
         expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
@@ -123,9 +123,9 @@ describe('distributes', () => {
         contract.deposit(userB, amount2, block2)
         contract.distribute(reward, block3)
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2)
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
         expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
@@ -146,9 +146,9 @@ describe('distributes', () => {
         contract.deposit(userB, amount2, block2)
         contract.distribute(reward, block3)
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2)
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
         expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
@@ -172,9 +172,9 @@ describe('distributes', () => {
 
         contract.distribute(reward, block4)
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 + amount3)
         const userADepositAge = (block3 - block1)*amount1 + (block4 - block3)*(amount1 + amount3)
         const userBDepositAge = (block4 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         expect(contract.userBalance(userA)).toBeCloseTo(amount1 + amount3 + reward*userADepositAge/totalDepositAge, 8)
         expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
@@ -193,9 +193,9 @@ describe('rewards distributed correctly', () => {
         const block3 = 100
         const block4 = 100
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 + amount3)
         const userADepositAge = (block3 - block1)*amount1 + (block4 - block3)*(amount1 + amount3)
         const userBDepositAge = (block4 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         beforeEach(() => {
             contract.setExpectedReward(reward, block4)
@@ -223,9 +223,11 @@ describe('rewards distributed correctly', () => {
         const block3 = 100
         const block4 = 100
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
-        const userADepositAge = (block3 - block1)*amount1 + (block4 - block3)*(amount1 - amount3)
+       // const totalDepositAge =  (block4 - block1)*(amount1 - amount3) + (block4 - block2)*amount2  //(block4 - block1)*(amount1 + amount2 - amount3) // (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
+        const userADepositAge = (block4 - block1)*(amount1 - amount3) //(block3 - block1)*amount1 + (block4 - block3)*(amount1 - amount3)
         const userBDepositAge = (block4 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
+
         beforeEach(() => {
             contract.setExpectedReward(reward, block4)
             //deposit 1000 tokens at the same time for both users
@@ -252,9 +254,10 @@ describe('rewards distributed correctly', () => {
         const block3 = 400
         const block4 = 400
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
+        //const totalDepositAge = (block4 - block1)*amount1 + (block4 - block2)*(amount2- amount3) /*+ (block4 - block3)*(amount2 - amount3)*////(block4 - block1)*(amount1 + amount2 - amount3)//(block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 - amount3)
         const userADepositAge = (block4 - block1)*amount1 
-        const userBDepositAge = (block3 - block2)*amount2 + (block4 - block3)*(amount2 - amount3)
+        const userBDepositAge = (block4 - block2)*(amount2 - amount3) //(block3 - block2)*amount2 + (block4 - block3)*(amount2 - amount3)
+        const totalDepositAge = userADepositAge + userBDepositAge
         beforeEach(() => {
             contract.setExpectedReward(reward, block4)
             //deposit same amount on different blocks
@@ -283,9 +286,10 @@ describe('rewards distributed correctly', () => {
         const block4 = 10
         const block5 = 20
 
-        const totalDepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 - amount2) + (block4 - block3)*(amount1 - amount2 + amount3) + (block5 - block4)*(amount1 - amount2 + amount3 + amount4)
-        const userADepositAge = (block2 - block1)*amount1 + (block3 - block2)*(amount1 - amount2) + (block5 - block3)*(amount1 - amount2 + amount3)
+        const userADepositAge = (block3 - block1)*(amount1 - amount2) + (block5 - block3)*(amount1 - amount2 + amount3)
         const userBDepositAge = (block5 - block4)*amount4
+        const totalDepositAge = userADepositAge + userBDepositAge
+
         beforeEach(() => {
             contract.setExpectedReward(reward, block5)
             contract.deposit(userA, amount1, block1)
@@ -321,17 +325,10 @@ describe('rewards distributed correctly', () => {
         const block7 = 400
         const block8 = 500
 
-        const totalDepositAge = 
-            (block2 - block1)*amount1 + 
-            (block3 - block2)*(amount1 + amount2) + 
-            (block4 - block3)*(amount1 + amount2 - amount3) + 
-            (block5 - block4)*(amount1 + amount2 - amount3 - amount4) +
-            (block6 - block5)*(amount1 + amount2 - amount3 - amount4 - amount5) + 
-            (block7 - block6)*(amount1 + amount2 - amount3 - amount4 - amount5 + amount6) + 
-            (block8 - block7)*(amount1 + amount2 - amount3 - amount4 - amount5 + amount6 + amount7) 
+        const userADepositAge = (block7 - block1)*(amount1 - amount4) + (block8 - block7)*(amount1 - amount4 + amount7)
+        const userBDepositAge = (block6 - block2)*(amount2 - amount3 - amount5) + (block8 - block6)*(amount2 - amount3 - amount5 + amount6)
+        const totalDepositAge = userADepositAge + userBDepositAge
 
-        const userADepositAge = (block4 - block1)*amount1 + (block7 - block4)*(amount1 - amount4) + (block8 - block7)*(amount1 - amount4 + amount7)
-        const userBDepositAge = (block3 - block2)*amount2 + (block5 - block3)*(amount2 - amount3) + (block6 - block5)*(amount2 - amount3 - amount5) + (block8 - block6)*(amount2 - amount3 - amount5 + amount6)
         beforeEach(() => {
             contract.setExpectedReward(reward, block8)
             //make random actions to set variables
@@ -369,14 +366,15 @@ describe('random scenarios', () => {
         const block3 = 45
         const block4 = 50
 
-        const totalDepositAge1 = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 + amount3)
         const userADepositAge1 = (block4 - block1)*amount1
         const userBDepositAge1 = (block4 - block2)*amount2 
         const userCDepositAge1 = (block4 - block3)*amount3
+        const totalDepositAge1 = userADepositAge1 + userBDepositAge1 + userCDepositAge1
         let rewardA1 = 0
         let rewardB1 = 0
         let rewardC1 = 0
         let rewardD1 = 0
+        let totalDeposits1 = 0
 
         const amount5 = 200
         const amount6 = 200
@@ -387,20 +385,19 @@ describe('random scenarios', () => {
         const block6 = 60
         const block7 = 80
         const block8 = 100
-        const totalDepositAge2 =
-            (block5 - block4)*(amount1 + amount2 + amount3 + reward1) + 
-            (block6 - block5)*(amount1 + amount2 + amount3 + reward1 - amount5) +
-            (block7 - block6)*(amount1 + amount2 + amount3 + reward1 - amount5 + amount6) +
-            (block8 - block7)*(amount1 + amount2 + amount3 + reward1 - amount5 + amount6  + amount7)
-        let userADepositAge2 = (block8 - block4)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
-        let userBDepositAge2 = (block8 - block4)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
-        let userCDepositAge2 = (block5 - block4)*(amount3 + reward1*userCDepositAge1/totalDepositAge1) + (block6 - block5)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 - amount5) + (block8 - block6)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 - amount5 + amount6)
-        let userDDepositAge2 = (block8 - block7)*amount7
+
+        const userADepositAge2 = (block8 - block4)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
+        const userBDepositAge2 = (block8 - block4)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
+        const userCDepositAge2 = (block6 - block4)*(amount3 - amount5 + reward1*userCDepositAge1/totalDepositAge1) + (block8 - block6)*(amount3 - amount5 + amount6 + reward1*userCDepositAge1/totalDepositAge1)
+        const userDDepositAge2 = (block8 - block7)*amount7
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge2 + userCDepositAge2 + userDDepositAge2
+
 
         let rewardA2 = 0
         let rewardB2 = 0
         let rewardC2 = 0
         let rewardD2 = 0
+        let totalDeposits2 = 0
 
         beforeEach(() => {
             contract.setExpectedReward(reward1, block4)
@@ -412,6 +409,7 @@ describe('random scenarios', () => {
                 rewardB1 = contract.userBalance(userB)
                 rewardC1 = contract.userBalance(userC)
                 rewardD1 = contract.userBalance(userD)
+                totalDeposits1 = contract.getTotalDeposits()
 
             contract.setExpectedReward(reward2, block8)
             contract.withdraw(userC, amount5, block5)
@@ -422,6 +420,7 @@ describe('random scenarios', () => {
                 rewardB2 = contract.userBalance(userB)
                 rewardC2 = contract.userBalance(userC)
                 rewardD2 = contract.userBalance(userD)
+                totalDeposits2 = contract.getTotalDeposits()
 
         })
         test('rewards after the first distribution are correct',()=>{
@@ -431,7 +430,7 @@ describe('random scenarios', () => {
             expect(rewardD1).toBeCloseTo(0, 8)
         })
         test('sum of rewards after the first distribution is consistent',()=>{
-            expect(rewardA1 + rewardB1 + rewardC1 + rewardD1).toBeCloseTo(contract.getTotalDeposits(), 8)
+            expect(rewardA1 + rewardB1 + rewardC1 + rewardD1).toBeCloseTo(totalDeposits1, 8)
         })
 
         test('rewards after the second distribution are correct',()=>{
@@ -441,7 +440,7 @@ describe('random scenarios', () => {
             expect(rewardD2).toBeCloseTo(amount7 + reward2*userDDepositAge2/totalDepositAge2, 8)
         })
         test('sum of rewards after the second distribution is consistent',()=>{
-            expect(rewardA2 + rewardB2 + rewardC2 + rewardD2).toBeCloseTo(reward2 + reward1, 8)
+            expect(rewardA2 + rewardB2 + rewardC2 + rewardD2).toBeCloseTo(totalDeposits2, 8)
         })
     })
 
@@ -488,22 +487,12 @@ describe('random scenarios', () => {
 
         contract.distribute(reward, block8) 
 
-        const totalDepositAge = 
-            (block2 - block1)*amount1 +
-            (block3 - block2)*(amount1 + amount2) +
-            (block4 - block3)*(amount1 + amount2 - amount3) +
-            (block5 - block4)*(amount1 + amount2 - amount3 - amount4) +
-            (block6 - block5)*(amount1 + amount2 - amount3 - amount4 + amount5) +
-            (block7 - block6)*(amount1 + amount2 - amount3 - amount4 + amount5 - amount6) +
-            (block8 - block7)*(amount1 + amount2 - amount3 - amount4 + amount5 - amount6 + amount7) 
         const userADepositAge = 
-            (block3 - block1)*amount1 + 
-            (block4 - block3)*(amount1 - amount3) + 
-            (block5 - block4)*(amount1 - amount3 - amount4) + 
-            (block6 - block5)*(amount1 - amount3 - amount4 + amount5) + 
-            (block7 - block6)*(amount1 - amount3 - amount4 + amount5 - amount6) + 
+            (block5 - block1)*(amount1 - amount3 - amount4) +
+            (block7 - block5)*(amount1 - amount3 - amount4 + amount5 - amount6) + 
             (block8 - block7)*(amount1 - amount3 - amount4 + amount5 - amount6 + amount7)
         const userBDepositAge = (block8 - block2)*amount2
+        const totalDepositAge = userADepositAge + userBDepositAge
 
         expect(contract.userBalance(userA) + contract.userBalance(userB)).toBeCloseTo(contract.getTotalDeposits(), 8)
         expect(contract.userBalance(userA)).toBeCloseTo(amount1 - amount3 - amount4 + amount5 - amount6 + amount7 + reward*userADepositAge/totalDepositAge, 8)
@@ -531,23 +520,10 @@ describe('random scenarios', () => {
         const block8 = 30
         const block9 = 50
 
-        const totalDepositAge = 
-            (block2 - block1)*amount1 +
-            (block3 - block2)*(amount1 + amount2) +
-            (block4 - block3)*(amount1 + amount2 + amount3) +
-            (block5 - block4)*(amount1 + amount2 + amount3 - amount4) +
-            (block6 - block5)*(amount1 + amount2 + amount3 - amount4 + amount5) +
-            (block7 - block6)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6) +
-            (block8 - block7)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7) +
-            (block9 - block8)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7 - amount8)
-
-        const userADepositAge = 
-            (block4 - block1)*amount1 + 
-            (block5 - block4)*(amount1 - amount4) + 
-            (block8 - block5)*(amount1 - amount4 + amount5) +
-            (block9 - block8)*(amount1 - amount4 + amount5 - amount8) 
+        const userADepositAge = (block5 - block1)*(amount1 - amount4) + (block9 - block5)*(amount1 - amount4 + amount5 - amount8)
         const userBDepositAge = (block9 - block2)*amount2
-        const userCDepositAge = (block6 - block3)*amount3 + (block7 - block6)*(amount3 - amount6) + (block9 - block7)*(amount3 - amount6 + amount7)
+        const userCDepositAge = (block7 - block3)*(amount3 - amount6) + (block9 - block7)*(amount3 - amount6 + amount7)
+        const totalDepositAge = userADepositAge + userBDepositAge + userCDepositAge
 
         beforeEach(() => {
             contract.setExpectedReward(reward, block9)
@@ -602,32 +578,17 @@ describe('random scenarios', () => {
         const block11 = 60
         const block12 = 100
 
-        const totalDepositAge1 = 
-            (block2 - block1)*amount1 +
-            (block3 - block2)*(amount1 + amount2) +
-            (block4 - block3)*(amount1 + amount2 + amount3) +
-            (block5 - block4)*(amount1 + amount2 + amount3 - amount4) +
-            (block6 - block5)*(amount1 + amount2 + amount3 - amount4 + amount5) +
-            (block7 - block6)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6) +
-            (block8 - block7)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7) +
-            (block9 - block8)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7 - amount8) 
-        const totalDepositAge2 = 
-            (block10 - block9)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7 - amount8 + reward1) +
-            (block11 - block10)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7 - amount8 + reward1 + amount10) +
-            (block12 - block11)*(amount1 + amount2 + amount3 - amount4 + amount5 - amount6 + amount7 - amount8 + reward1 + amount10 + amount11)
-
-        const userADepositAge1 = 
-            (block4 - block1)*amount1 + 
-            (block5 - block4)*(amount1 - amount4) + 
-            (block8 - block5)*(amount1 - amount4 + amount5) +
-            (block9 - block8)*(amount1 - amount4 + amount5 - amount8) 
+        const userADepositAge1 = (block5 - block1)*(amount1 - amount4) + (block9 - block5)*(amount1 - amount4 + amount5 - amount8) 
         const userBDepositAge1 = (block9 - block2)*amount2
-        const userCDepositAge1 = (block6 - block3)*amount3 + (block7 - block6)*(amount3 - amount6) + (block9 - block7)*(amount3 - amount6 + amount7)
+        const userCDepositAge1 = (block7 - block3)*(amount3 - amount6) + (block9 - block7)*(amount3 - amount6 + amount7)
+        const totalDepositAge1 = userADepositAge1 + userBDepositAge1 + userCDepositAge1
 
         const userADepositAge2 = (block12 - block9)*(amount1 - amount4 + amount5 - amount8 + reward1*userADepositAge1/totalDepositAge1)
         const userBDepositAge2 = (block11 - block9)*(amount2 + reward1*userBDepositAge1/totalDepositAge1) + (block12 - block11)*(amount2 + amount11 + reward1*userBDepositAge1/totalDepositAge1)
         const userCDepositAge2 = (block12 - block9)*(amount3 - amount6 + amount7 + reward1*userCDepositAge1/totalDepositAge1)
         const userDDepositAge2 = (block12 - block10)*amount10 
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge2 + userCDepositAge2 + userDDepositAge2
+
 
         beforeEach(() => {
             contract.setExpectedReward(reward1, block9)
@@ -667,11 +628,12 @@ describe('random scenarios', () => {
         const block3 = 50
         const block4 = 100
 
-        const totalDepositAge1 = (block2 - block1)*amount1 
-        const totalDepositAge2 =  (block3 - block2)*(amount1 + reward1) + (block4 - block3)*(amount1 + reward1 + amount3)
         const userADepositAge1 = (block2 - block1)*amount1 
+        const totalDepositAge1 = userADepositAge1
+
         const userADepositAge2 =  (block4 - block2)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
         const userBDepositAge = (block4 - block3)*amount3
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge
 
         beforeEach(() => {
             contract.setExpectedReward(reward1, block2)
@@ -702,11 +664,12 @@ describe('random scenarios', () => {
         const block3 = 50
         const block4 = 10000
 
-        const totalDepositAge1 = (block2 - block1)*amount1 
-        const totalDepositAge2 =  (block3 - block2)*(amount1 + reward1) + (block4 - block3)*(amount1 + reward1 + amount3)
         const userADepositAge1 = (block2 - block1)*amount1 
+        const totalDepositAge1 = userADepositAge1
+
         const userADepositAge2 =  (block4 - block2)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
         const userBDepositAge = (block4 - block3)*amount3
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge 
 
         beforeEach(() => {
             contract.setExpectedReward(reward1, block2)
@@ -766,25 +729,25 @@ describe('random scenarios', () => {
         const block6 = 151
         const block7 = 152
 
-        const totalDepositAge1 = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) + (block4 - block3)*(amount1 + amount2 + amount3)
-        const totalDepositAge2 = (block5 - block4)*(amount1 + amount2 + amount3 + reward1)
-        const totalDepositAge3 = (block6 - block5)*(amount1 + amount2 + amount3 + reward1 + reward2)
-        const totalDepositAge4 = (block7 - block6)*(amount1 + amount2 + amount3 + reward1 + reward2 + reward3)
-
         const userADepositAge1 = (block4 - block1)*amount1 
-        const userADepositAge2 = (block5 - block4)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
-        const userADepositAge3 = (block6 - block5)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2)
-        const userADepositAge4 = (block7 - block6)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2 + reward3*userADepositAge3/totalDepositAge3)
-
         const userBDepositAge1 = (block4 - block2)*amount2
-        const userBDepositAge2 = (block5 - block4)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
-        const userBDepositAge3 = (block6 - block5)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2)
-        const userBDepositAge4 = (block7 - block6)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2 + reward3*userBDepositAge3/totalDepositAge3)
-
         const userCDepositAge1 = (block4 - block3)*amount3
+        const totalDepositAge1 = userADepositAge1 + userBDepositAge1 + userCDepositAge1
+
+        const userADepositAge2 = (block5 - block4)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
+        const userBDepositAge2 = (block5 - block4)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
         const userCDepositAge2 = (block5 - block4)*(amount3 + reward1*userCDepositAge1/totalDepositAge1)
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge2 + userCDepositAge2
+
+        const userADepositAge3 = (block6 - block5)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2)
+        const userBDepositAge3 = (block6 - block5)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2)
         const userCDepositAge3 = (block6 - block5)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 + reward2*userCDepositAge2/totalDepositAge2)
+        const totalDepositAge3 = userADepositAge3 + userBDepositAge3 + userCDepositAge3
+
+        const userADepositAge4 = (block7 - block6)*(amount1 + reward1*userADepositAge1/totalDepositAge1 + reward2*userADepositAge2/totalDepositAge2 + reward3*userADepositAge3/totalDepositAge3)
+        const userBDepositAge4 = (block7 - block6)*(amount2 + reward1*userBDepositAge1/totalDepositAge1 + reward2*userBDepositAge2/totalDepositAge2 + reward3*userBDepositAge3/totalDepositAge3)
         const userCDepositAge4 = (block7 - block6)*(amount3 + reward1*userCDepositAge1/totalDepositAge1 + reward2*userCDepositAge2/totalDepositAge2 + reward3*userCDepositAge3/totalDepositAge3)
+        const totalDepositAge4 = userADepositAge4 + userBDepositAge4 + userCDepositAge4
 
         beforeEach(() => {
             contract.deposit(userA, amount1, block1)
@@ -839,13 +802,13 @@ describe('random scenarios', () => {
         const block3 = 50
         const block4 = 100
 
-        const totalDepositAge1 = (block2 - block1)*amount1 + (block3 - block2)*(amount1 + amount2) 
-        const totalDepositAge2 = (block4 - block3)*(amount1 + amount2 + reward1)
-
         const userADepositAge1 = (block3 - block1)*amount1 
-        const userADepositAge2 = (block4 - block3)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
         const userBDepositAge1 = (block3 - block2)*amount2
+        const totalDepositAge1 = userADepositAge1 + userBDepositAge1
+
+        const userADepositAge2 = (block4 - block3)*(amount1 + reward1*userADepositAge1/totalDepositAge1)
         const userBDepositAge2 = (block4 - block3)*(amount2 + reward1*userBDepositAge1/totalDepositAge1)
+        const totalDepositAge2 = userADepositAge2 + userBDepositAge2
         beforeEach(() => {
             contract.setExpectedReward(reward1, block3)
             contract.deposit(userA, amount1, block1)

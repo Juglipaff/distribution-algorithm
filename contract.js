@@ -6,7 +6,10 @@ module.exports = class Contract {
         this.expectedReward = 0 
         this.totalULP = 0
         this.ULP = {}
+        this.stake = {}
         this.setExpectedReward(0, 100)
+        this.lastDistribution = 0
+        this.hasDeposited={}
     }
 
     setExpectedReward(amount, block){
@@ -15,8 +18,18 @@ module.exports = class Contract {
     }
 
     deposit(user, amount, currentBlock) {
+        if(this.hasDeposited[user]===undefined){
+            this.hasDeposited[user]={}
+        }
+        this.stake[user] = (this.stake[user]||0) + amount
+        if(!this.hasDeposited[user][this.lastDistribution]){
+            this.hasDeposited[user][this.lastDistribution] = true
+            this.cumulativeBlockDeposits += this.stake[user]*(this.expectedDistribution - currentBlock)
+        }else{
+            this.cumulativeBlockDeposits += amount*(this.expectedDistribution - currentBlock)
+        }
         this.totalDeposits += amount
-        this.cumulativeBlockDeposits += amount*(this.expectedDistribution - currentBlock)
+
         let newULP
         if(this.totalULP === 0){
             newULP = 1
@@ -26,14 +39,19 @@ module.exports = class Contract {
             newULP = x/(1 - x)*this.totalULP
         }
         this.ULP[user] = (this.ULP[user]||0) + newULP
-        
         this.totalULP += newULP 
     }
 
     withdraw(user, amount, currentBlock) {
-        this.cumulativeBlockDeposits -= amount*(this.expectedDistribution - currentBlock)
-        const withdrawnULP = amount * this.totalULP / this.totalDeposits
+        this.stake[user] -= amount
+        if(!this.hasDeposited[user][this.lastDistribution]){
+            this.hasDeposited[user][this.lastDistribution] = true
+            this.cumulativeBlockDeposits += this.stake[user]*(this.expectedDistribution - currentBlock)
+        }else{
+            this.cumulativeBlockDeposits -= amount*(this.expectedDistribution - currentBlock)
+        }
 
+        const withdrawnULP = amount * this.totalULP / this.totalDeposits
         this.totalDeposits -= amount
         this.totalULP -= withdrawnULP 
         this.ULP[user] -= withdrawnULP
@@ -42,10 +60,11 @@ module.exports = class Contract {
     distribute(reward, currentBlock) {
         this.totalDeposits += reward
         this.cumulativeBlockDeposits = 0
+        this.lastDistribution = currentBlock
     }
 
     userBalance(user) {
-        return  this.totalDeposits * (this.ULP[user]||0) / this.totalULP
+        return this.totalDeposits * (this.ULP[user]||0) / this.totalULP
     }
 
     getTotalDeposits() {
