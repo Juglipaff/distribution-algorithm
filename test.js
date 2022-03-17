@@ -84,7 +84,7 @@ describe('withdraws', () => {
 })
 
 describe('distributes', () => {
-    test('distributes tokens equaly if invested on the same block', ()=>{
+    describe('distributes tokens equaly if invested on the same block', ()=>{
         const amount1 = 1000
         const amount2 = 1000
 
@@ -94,21 +94,29 @@ describe('distributes', () => {
 
         const reward = 1000
 
-
-        contract.setExpectedReward(reward, block3)
-        contract.deposit(userA, amount1, block1)
-        contract.deposit(userB, amount2, block2)
-        contract.distribute(reward, block3)
+        beforeEach(() => {
+            contract.setExpectedReward(reward, block3)
+            contract.deposit(userA, amount1, block1)
+            contract.deposit(userB, amount2, block2)
+            contract.distribute(reward, block3)
+        })
 
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
         const totalDepositAge = userADepositAge + userBDepositAge
 
-        expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
-        expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        test('tokens are distributed correctly',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
     })
 
-    test('distributes tokens proportionally if invested on the same block', () => {
+    describe('distributes tokens proportionally if invested on the same block', () => {
         const amount1 = 1000
         const amount2 = 500
 
@@ -117,21 +125,29 @@ describe('distributes', () => {
         const block3 = 100
 
         const reward = 1000
-
-        contract.setExpectedReward(reward, block3)
-        contract.deposit(userA, amount1, block1)
-        contract.deposit(userB, amount2, block2)
-        contract.distribute(reward, block3)
+        beforeEach(() => {
+            contract.setExpectedReward(reward, block3)
+            contract.deposit(userA, amount1, block1)
+            contract.deposit(userB, amount2, block2)
+            contract.distribute(reward, block3)
+        })
 
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
         const totalDepositAge = userADepositAge + userBDepositAge
 
-        expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
-        expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        test('tokens are distributed correctly',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
     })
 
-    test('distributes tokens proportionally if invested on different blocks',()=>{
+    describe('distributes tokens proportionally if invested on different blocks',()=>{
         const amount1 = 1000
         const amount2 = 1000
 
@@ -140,21 +156,29 @@ describe('distributes', () => {
         const block3 = 50
 
         const reward = 3000
-
-        contract.setExpectedReward(reward, block3)
-        contract.deposit(userA, amount1, block1)
-        contract.deposit(userB, amount2, block2)
-        contract.distribute(reward, block3)
+        beforeEach(() => {
+            contract.setExpectedReward(reward, block3)
+            contract.deposit(userA, amount1, block1)
+            contract.deposit(userB, amount2, block2)
+            contract.distribute(reward, block3)
+        })
 
         const userADepositAge = (block3 - block1)*amount1
         const userBDepositAge = (block3 - block2)*amount2
         const totalDepositAge = userADepositAge + userBDepositAge
 
-        expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
-        expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        test('tokens are distributed correctly',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
     })
 
-    test('distributes tokens proportionally if invested on different blocks and had multiple deposits from the same user',()=>{
+    describe('distributes tokens proportionally if invested on different blocks and had multiple deposits from the same user',()=>{
         const amount1 = 500
         const amount2 = 1000
         const amount3 = 500
@@ -165,23 +189,30 @@ describe('distributes', () => {
         const block4 = 50
 
         const reward = 1000
-        contract.setExpectedReward(reward, block4)
-        contract.deposit(userA, amount1, block1)
-        contract.deposit(userB, amount2, block2)
-        contract.deposit(userA, amount3, block3)
+        beforeEach(() => {
+            contract.setExpectedReward(reward, block4)
+            contract.deposit(userA, amount1, block1)
+            contract.deposit(userB, amount2, block2)
+            contract.deposit(userA, amount3, block3)
 
-        contract.distribute(reward, block4)
+            contract.distribute(reward, block4)
+        })
 
         const userADepositAge = (block3 - block1)*amount1 + (block4 - block3)*(amount1 + amount3)
         const userBDepositAge = (block4 - block2)*amount2
         const totalDepositAge = userADepositAge + userBDepositAge
 
-        expect(contract.userBalance(userA)).toBeCloseTo(amount1 + amount3 + reward*userADepositAge/totalDepositAge, 8)
-        expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
-    })
-})
+        test('tokens are distributed correctly',()=>{
+            expect(contract.userBalance(userA)).toBeCloseTo(amount1 + amount3 + reward*userADepositAge/totalDepositAge, 8)
+            expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
 
-describe('rewards distributed correctly', () => {
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 + amount3 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
+    })
+
     describe('rewards distributed correctly after making multiple deposits on the same block',()=>{
         const amount1 = 1000
         const amount2 = 1000
@@ -207,9 +238,14 @@ describe('rewards distributed correctly', () => {
             contract.distribute(reward, block4)
         })
 
-        test('doesnt affect deposits',()=>{
+        test('tokens are distributed correctly',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(amount1 + amount3 + reward*userADepositAge/totalDepositAge, 8)
             expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+        
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 + amount3 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
         })
     })
     describe('rewards distributed correctly after withdrawal with multiple deposits on the same block',()=>{
@@ -237,9 +273,13 @@ describe('rewards distributed correctly', () => {
             contract.distribute(reward, block4)
         })
 
-        test('doesnt affect deposits',()=>{
+        test('tokens are distributed correctly',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(amount1 - amount3 + reward*userADepositAge/totalDepositAge, 8)
             expect(contract.userBalance(userB)).toBeCloseTo(amount2 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 - amount3 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
         })
     })
     describe('rewards distributed correctly after withdrawal with multiple deposits on different blocks', () => {
@@ -266,9 +306,13 @@ describe('rewards distributed correctly', () => {
             contract.distribute(reward, block4)
         })
 
-        test('doesnt affect deposits',()=>{
+        test('tokens are distributed correctly',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(amount1 + reward*userADepositAge/totalDepositAge, 8)
             expect(contract.userBalance(userB)).toBeCloseTo(amount2 - amount3 + reward*userBDepositAge/totalDepositAge, 8)
+        })
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 - amount3 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
         })
     })
     describe('rewards distributed correctly after multiple withdrawals and deposits on different blocks', () => {
@@ -298,12 +342,15 @@ describe('rewards distributed correctly', () => {
             contract.distribute(reward, block5)
         })
 
-        test('doesnt affect deposits',()=>{
+        test('tokens are distributed correctly',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(amount1 - amount2 + amount3 + reward*userADepositAge/totalDepositAge, 8)
             expect(contract.userBalance(userB)).toBeCloseTo(amount4 + reward*userBDepositAge/totalDepositAge, 8)
         })
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 - amount2 + amount3 + amount4 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
     })
-    
     describe('rewards distributed correctly after multiple withdrawals and deposits on different blocks from two users',()=>{
         const amount1 = 1000
         const amount2 = 2000
@@ -343,14 +390,17 @@ describe('rewards distributed correctly', () => {
             contract.deposit(userA, amount7, block7)
             contract.distribute(reward, block8)
         })
-
-
-        test('doesnt affect deposits',()=>{
+        test('tokens are distributed correctly',()=>{
             expect(contract.userBalance(userA)).toBeCloseTo(amount1 - amount4 + amount7 + reward*userADepositAge/totalDepositAge, 8)
             expect(contract.userBalance(userB)).toBeCloseTo(amount2 - amount3 - amount5 + amount6 + reward*userBDepositAge/totalDepositAge, 8)
         })
+        test('token amount is consistent',()=>{
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(amount1 + amount2 - amount3 - amount4 - amount5 + amount6 + amount7 + reward, 8)
+            expect(contract.userBalance(userB) + contract.userBalance(userA)).toBeCloseTo(contract.getTotalDeposits(), 8)
+        })
     })
 })
+
 //some scenarios that made previos code fail
 describe('random scenarios', () => {
     describe('rewards distributed correctly after two distributions with multiple users joining at different times',()=>{
@@ -439,6 +489,7 @@ describe('random scenarios', () => {
         })
         test('sum of rewards after the second distribution is consistent',()=>{
             expect(rewardA2 + rewardB2 + rewardC2 + rewardD2).toBeCloseTo(totalDeposits2, 8)
+            expect(amount1 + amount2 + amount3 + reward1 - amount5 + amount6 + amount7 + reward2).toBeCloseTo(totalDeposits2, 8)
         })
     })
 
@@ -774,6 +825,7 @@ describe('random scenarios', () => {
         })
         test('sum of balances is consistent',()=>{
             expect(contract.userBalance(userA) + contract.userBalance(userB) + contract.userBalance(userC)).toBeCloseTo(amount1 + amount2 + amount3 + reward1 + reward2 + reward3 + reward4, 8)
+            expect(contract.userBalance(userA) + contract.userBalance(userB) + contract.userBalance(userC)).toBeCloseTo(contract.getTotalDeposits(), 8)
         })
     })
     describe('rewards distributed correctly if no distributions were made for one of the users', ()=>{
