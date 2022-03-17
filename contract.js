@@ -6,7 +6,7 @@ module.exports = class Contract {
         this.userDeposits = {}
         this.userDALastUpdated = {}   // last block where user's deposit age was recalculated
         this.totalDALastUpdated = 0
-        this.userDepositChanged = {}  // flag to be flushed on every reward distribution
+        this.hasDeposited = {}
         this.userDepositAge = {}
         this.totalDepositAge = 0
         this.totalULP = 0
@@ -29,7 +29,8 @@ module.exports = class Contract {
             this.userDALastUpdated[user] = 0
         }
         // accumulate deposit age within the current distribution interval
-        if (this.userDALastUpdated[user] > this.lastRewardBlock || this.userDepositChanged[user]) {
+        const userDepositChanged = this.hasDeposited[user][this.lastRewardBlock] || false
+        if (this.userDALastUpdated[user] > this.lastRewardBlock || userDepositChanged) {
             // add deposit age from previous deposit age update till now
             this.userDepositAge[user] += (currentBlock - this.userDALastUpdated[user]) * this.userDeposits[user]
         } else {
@@ -49,6 +50,12 @@ module.exports = class Contract {
     }
 
     deposit(user, amount, currentBlock) {
+        //js only 
+        if(this.hasDeposited[user] === undefined){
+            this.hasDeposited[user] = {}
+        }
+        //js only
+
         this._updateDeposit(user, currentBlock)
         // update deposit amounts
         this.userDeposits[user] += amount
@@ -68,7 +75,9 @@ module.exports = class Contract {
         }
         this.ULP[user] = (this.ULP[user]||0) + newULP
         this.totalULP += newULP
-        this.userDepositChanged[user] = true
+        if(!this.hasDeposited[user][this.lastRewardBlock]){
+            this.hasDeposited[user][this.lastRewardBlock] = true
+        }
     }
 
     withdraw(user, amount, currentBlock) {
@@ -95,16 +104,14 @@ module.exports = class Contract {
         }
         this.totalULP -= burntULP
         this.ULP[user] -= burntULP
-        this.userDepositChanged[user] = true
+
+        if(!this.hasDeposited[user][this.lastRewardBlock]){
+            this.hasDeposited[user][this.lastRewardBlock] = true
+        }
     }
 
     distribute(reward, currentBlock) {
         this.totalDeposits += reward
-        
-        // This is a non-O(1) operation, but it's only needed to handle deposits that happen in one block
-        // with a reward distribution to determine their sequence. This flag can be completely removed if
-        // we don't allow deposits/withdrawals in one block with distributions.
-        this.userDepositChanged = {}
         
         // to avoid having negative expected reward time we set expected reward block right here based on the previous reward time
         let lastRewardPeriod = currentBlock - this.lastRewardBlock
@@ -113,7 +120,14 @@ module.exports = class Contract {
     }
 
     userBalance(user) {
-        if (this.userDALastUpdated[user] > this.lastRewardBlock || this.userDepositChanged[user]) {
+        //js only 
+        if(this.hasDeposited[user] === undefined){
+            this.hasDeposited[user] = {}
+        }
+        //js only 
+
+        const userDepositChanged = this.hasDeposited[user][this.lastRewardBlock] || false
+        if (this.userDALastUpdated[user] > this.lastRewardBlock || userDepositChanged) {
             return this.userDeposits[user] || 0
         } else {
             if (this.totalULP == 0) {
