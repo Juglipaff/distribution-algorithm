@@ -6,7 +6,7 @@ module.exports = class Contract {
         this.userDeposits = {}
         this.userDALastUpdated = {}   // last block where user's deposit age was recalculated
         this.totalDALastUpdated = 0
-        this.hasDeposited = {}
+        this.userDepositChanged = {}
         this.userDepositAge = {}
         this.totalDepositAge = 0
         this.totalULP = 0
@@ -21,41 +21,36 @@ module.exports = class Contract {
     }
 
     _updateDeposit(user, currentBlock) {
-        // init values
+        // init values  //js only 
         if (this.userDeposits[user] === undefined) {
             this.userDeposits[user] = 0
         }
         if (this.userDALastUpdated[user] === undefined) {
             this.userDALastUpdated[user] = 0
         }
+        if (this.userDepositChanged[user] === undefined) {
+            this.userDepositChanged[user] = {}
+        }
         // accumulate deposit age within the current distribution interval
-        const userDepositChanged = this.hasDeposited[user][this.lastRewardBlock] || false
-        if (this.userDALastUpdated[user] > this.lastRewardBlock || userDepositChanged) {
+        const userDepositChanged = this.userDepositChanged[user][this.lastRewardBlock] || false
+        if (userDepositChanged) {
             // add deposit age from previous deposit age update till now
             this.userDepositAge[user] += (currentBlock - this.userDALastUpdated[user]) * this.userDeposits[user]
         } else {
+            this.userDepositChanged[user][this.lastRewardBlock] = true
             // a reward has been distributed, update user deposit
             this.userDeposits[user] = this.userBalance(user)
             // count fresh deposit age from that reward distribution till now
             this.userDepositAge[user] = (currentBlock - this.lastRewardBlock) * this.userDeposits[user]
         }
         // same with total deposit age
-        if (this.totalDALastUpdated > this.lastRewardBlock) {
-            this.totalDepositAge += (currentBlock - this.totalDALastUpdated) * this.totalDeposits
-        } else {
-            this.totalDepositAge = (currentBlock - this.lastRewardBlock) * this.totalDeposits
-        }
+        this.totalDepositAge += (currentBlock - this.totalDALastUpdated) * this.totalDeposits
+
         this.userDALastUpdated[user] = currentBlock
         this.totalDALastUpdated = currentBlock
     }
 
     deposit(user, amount, currentBlock) {
-        //js only 
-        if(this.hasDeposited[user] === undefined){
-            this.hasDeposited[user] = {}
-        }
-        //js only
-
         this._updateDeposit(user, currentBlock)
         // update deposit amounts
         this.userDeposits[user] += amount
@@ -75,14 +70,11 @@ module.exports = class Contract {
         }
         this.ULP[user] = (this.ULP[user]||0) + newULP
         this.totalULP += newULP
-        if(!this.hasDeposited[user][this.lastRewardBlock]){
-            this.hasDeposited[user][this.lastRewardBlock] = true
-        }
     }
 
     withdraw(user, amount, currentBlock) {
         if (this.userBalance(user) < amount) {
-            return console.error('Not enough balance: user '+user+' has '+this.userBalance(user)+' but tried to withdraw '+amount)
+            return console.error('Not enough balance: user ' + user + ' has ' + this.userBalance(user) + ' but tried to withdraw ' + amount)
         }
         this._updateDeposit(user, currentBlock)
         // update deposit amounts
@@ -104,10 +96,6 @@ module.exports = class Contract {
         }
         this.totalULP -= burntULP
         this.ULP[user] -= burntULP
-
-        if(!this.hasDeposited[user][this.lastRewardBlock]){
-            this.hasDeposited[user][this.lastRewardBlock] = true
-        }
     }
 
     distribute(reward, currentBlock) {
@@ -117,17 +105,20 @@ module.exports = class Contract {
         let lastRewardPeriod = currentBlock - this.lastRewardBlock
         this.setExpectedReward(reward, currentBlock + lastRewardPeriod)
         this.lastRewardBlock = currentBlock
+
+        this.totalDepositAge = 0
+        this.totalDALastUpdated = currentBlock
     }
 
     userBalance(user) {
         //js only 
-        if(this.hasDeposited[user] === undefined){
-            this.hasDeposited[user] = {}
+        if(this.userDepositChanged[user] === undefined){
+            this.userDepositChanged[user] = {}
         }
         //js only 
 
-        const userDepositChanged = this.hasDeposited[user][this.lastRewardBlock] || false
-        if (this.userDALastUpdated[user] > this.lastRewardBlock || userDepositChanged) {
+        const userDepositChanged = this.userDepositChanged[user][this.lastRewardBlock] || false
+        if (userDepositChanged) {
             return this.userDeposits[user] || 0
         } else {
             if (this.totalULP == 0) {
