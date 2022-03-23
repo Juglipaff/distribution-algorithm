@@ -1,12 +1,8 @@
 const Contract = require('./contract.js');
 
-const users = ['A','B','C','D','E','1','2','3','4']
 
-/*const userA = 'A'
-const userB = 'B'
-const userC = 'C'
-const userD = 'D'
-const userE = 'E'*/
+const userAmount = 10
+const users = Array.from(Array(userAmount).keys())
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
