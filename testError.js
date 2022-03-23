@@ -1,102 +1,96 @@
 const Contract = require('./contract.js');
 
-const userA = 'A'
+const users = ['A','B','C','D','E','1','2','3','4']
+
+/*const userA = 'A'
 const userB = 'B'
 const userC = 'C'
+const userD = 'D'
+const userE = 'E'*/
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
-let AMaxError = 0
-let BMaxError = 0
-let CMaxError = 0
+
+let userErrorData = users.map((user) => { 
+    return [user, {maxError:0, errorSum:0}]
+})
+userErrorData = Object.fromEntries(userErrorData)
+
 
 const MaxErrorData = {error:0}
 
-for (let i = 0; i < 10000000; i++) {
+const iterations = 100000
+for (let i = 0; i < iterations; i++) {
     const contract = new Contract()
 
-    const amount1 = getRandomInt(1000) + 1
-    const amount2 = getRandomInt(1000) + 1
-    const amount3 = getRandomInt(1000) + 1
-    const reward = getRandomInt(1000) + 1
+    let prevBlock = 0
+    let userData = []
+    for (let j = 0; j < users.length; j++) {
+        const amount = getRandomInt(900719925474099) + 1 
+        const block = prevBlock + getRandomInt(10000)
+        prevBlock = block
+        userData.push({user:users[j], amount, block})
+    }
+    const reward = getRandomInt(900719925474099) + 1
+    const rewardBlock = prevBlock + getRandomInt(10000) 
 
-    const block1 = getRandomInt(100)
-    const block2 = block1 + getRandomInt(100)
-    const block3 = block2 + getRandomInt(100)
-    const rewardBlock = block3 + getRandomInt(100)
+    const userDepositAges = userData.map((user) => (rewardBlock - user.block)*user.amount) 
+    const totalDepositAge = userDepositAges.reduce((previousValue, currentValue) => previousValue + currentValue,0)
+    userData = userData.map((user, index) => ({
+        ...user,
+        theoreticalBalance: user.amount + reward*userDepositAges[index]/totalDepositAge
+    })) 
 
-    /*const amount1 = 500
-    const amount2 = 700
-    const amount3 = 200
-    const reward = 2000
-
-    const block1 = 20
-    const block2 = 40
-    const block3 = 45
-    const rewardBlock = 50*/
-
-    //get theoretical user balance after distribution
-    const userADepositAge = (rewardBlock - block1)*amount1
-    const userBDepositAge = (rewardBlock - block2)*amount2 
-    const userCDepositAge = (rewardBlock - block3)*amount3
-    const totalDepositAge = userADepositAge + userBDepositAge + userCDepositAge
-
-    const ATheoretical = amount1 + reward*userADepositAge/totalDepositAge
-    const BTheoretical = amount2 + reward*userBDepositAge/totalDepositAge
-    const CTheoretical = amount3 + reward*userCDepositAge/totalDepositAge
-
-    //get actual user balance after distribution
     contract.setExpectedReward(reward, rewardBlock)
-    contract.deposit(userA, amount1, block1)
-    contract.deposit(userB, amount2, block2)
-    contract.deposit(userC, amount3, block3)
-    contract.distribute(reward, rewardBlock)    
-    
-    const APractical = contract.userBalance(userA)
-    const BPractical = contract.userBalance(userB)
-    const CPractical = contract.userBalance(userC)
+    userData.forEach((user) => contract.deposit(user.user, user.amount, user.block))
+    contract.distribute(reward, rewardBlock)  
 
-    const AError = Math.abs(ATheoretical - APractical) / ATheoretical
-    const BError = Math.abs(BTheoretical - BPractical) / BTheoretical
-    const CError = Math.abs(CTheoretical - CPractical) / CTheoretical
+    userData = userData.map((user) => {
+        const userBalance = contract.userBalance(user.user)
+        return {
+            ...user,
+            practicalBalance: userBalance,
+            error: Math.abs(user.theoreticalBalance - userBalance) / user.theoreticalBalance
+        }
+    }) 
 
-    if(AError > AMaxError){
-        AMaxError = AError
-    }
-    if(BError > BMaxError){
-        BMaxError = BError
-    }
-    if(CError > CMaxError){
-        CMaxError = CError
-    }
+    userData.forEach((user) => {
+        userErrorData[user.user].errorSum += user.error
+        if(user.error > userErrorData[user.user].maxError){
+            userErrorData[user.user].maxError = user.error
+        }
+    }) 
 
-    if(AError > MaxErrorData.error || BError > MaxErrorData.error || CError > MaxErrorData.error){
-        MaxErrorData.error = Math.max(AError, BError, CError)
+    if(userData.some((user) => user.error > MaxErrorData.error)){
+        MaxErrorData.error = Math.max(...userData.map(user => user.error))
 
-        MaxErrorData.amount1 = amount1
-        MaxErrorData.amount2 = amount2
-        MaxErrorData.amount3 = amount3
+        userData.forEach((user) => {
+            MaxErrorData['amount' + user.user] = user.amount
+        })
         MaxErrorData.reward = reward
-        
-        MaxErrorData.block1 = block1
-        MaxErrorData.block2 = block2
-        MaxErrorData.block3 = block3
+
+        userData.forEach((user) => {
+            MaxErrorData['block' + user.user] = user.block
+        })
         MaxErrorData.rewardBlock = rewardBlock
 
-        MaxErrorData.ATheoretical = ATheoretical
-        MaxErrorData.APractical = APractical
 
-        MaxErrorData.BTheoretical = BTheoretical
-        MaxErrorData.BPractical = BPractical
-
-        MaxErrorData.CTheoretical = CTheoretical
-        MaxErrorData.CPractical = CPractical
+        userData.forEach((user) => {
+            MaxErrorData[user.user + 'Theoretical'] = user.theoreticalBalance
+            MaxErrorData[user.user + 'Practical'] = user.practicalBalance
+        })
     }
 }
-console.log('Max user A balance error: ', (AMaxError*100).toFixed(2)+'%')
-console.log('Max user B balance error: ', (BMaxError*100).toFixed(2)+'%')
-console.log('Max user C balance error: ', (CMaxError*100).toFixed(2)+'%')
+
+users.forEach(user=>{
+    console.log(`Max user ${user} balance error: `, (userErrorData[user].maxError*100).toFixed(2)+'%')
+})
+console.log('\n')
+users.forEach(user=>{
+    console.log(`Average user ${user} balance error: `, (userErrorData[user].errorSum/iterations*100).toFixed(2)+'%')
+})
+
 console.log('\nMax error data:')
 
 Object.keys(MaxErrorData).forEach((prop)=> {
@@ -105,6 +99,4 @@ Object.keys(MaxErrorData).forEach((prop)=> {
         return
     }
     console.log(prop + ':', MaxErrorData[prop])
-}
-)
-//console.log('Max error data: ', MaxErrorData)
+})
