@@ -48,7 +48,7 @@ module.exports = class Contract {
         this.totalDALastUpdated = currentBlock
     }
 
-    deposit(user, amount, currentBlock) {
+    deposit(user, amount, currentBlock, log=false) {
         this._updateDeposit(user, currentBlock)
         // note: user's actual fair reward may differ from these calculations because new deposits
         // in the same reward interval will change the total expected deposit age, so there's no way

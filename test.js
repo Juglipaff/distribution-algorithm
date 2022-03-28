@@ -614,66 +614,22 @@ describe('random scenarios', () => {
 
         beforeEach(() => {
             c.deposit(userA, amount1, block1)   // 1000, 0
-            console.log('User A deposit: '+c.userDeposits[userA])
-            console.log('User A now has '+c.ULP[userA]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.deposit(userB, amount2, block2)   // 1000, 0
-            console.log('User B deposit: '+c.userDeposits[userB])
-            console.log('User B now has '+c.ULP[userB]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.deposit(userC, amount3, block3)   // 1000, 0
-            console.log('User C deposit: '+c.userDeposits[userC])
-            console.log('User C now has '+c.ULP[userC]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.setExpectedReward(1090.909, block9)
             c.withdraw(userA, amount4, block4)  // 500, 10
             c.deposit(userA, amount5, block5)   // 500, 10
-            console.log('User A withdraws and deposits again 500 at 10')
-            console.log('User A deposit: '+c.userDeposits[userA])
-            console.log('User A now has '+c.ULP[userA]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.withdraw(userC, amount6, block6)  // 700, 20
             c.deposit(userC, amount7, block7)   // 700, 20
-            console.log('User C withdraws and deposits again 700 at 20')
-            console.log('User C deposit: '+c.userDeposits[userC])
-            console.log('User C now has '+c.ULP[userC]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.withdraw(userA, amount8, block8)  // 500, 25
-            console.log('User A withdraws 500 at 25')
-            console.log('User A deposit: '+c.userDeposits[userA])
-            console.log('User A now has '+c.ULP[userA]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
             c.setExpectedReward(reward1, block9)
             c.distribute(reward1, block9)       // 1000, 50
-            
-            console.log('Reward 1000 distributed at 50')
-            console.log('Total deposits: '+c.totalDeposits)
-            console.log('User A deposit: '+c.userBalance(userA))
             c.setExpectedReward(673.077, block12)
             c.deposit(userD, amount10, block10) // 500, 50
-            console.log('User D deposit: '+c.userDeposits[userD])
-            console.log('User D now has '+c.ULP[userD]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
-            c.setExpectedReward(769.231, block9)
-            c.deposit(userB, amount11, block11) // 1500, 60
-            console.log('User B deposits 1500 more at 60')
-            console.log('User B deposit: '+c.userDeposits[userB])
-            console.log('User B now has '+c.ULP[userB]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
+            c.setExpectedReward(769.231, block12)
+            c.deposit(userB, amount11, block11, true) // 1500, 60
             c.setExpectedReward(reward2, block12)
             c.distribute(reward2, block12)      // 1000, 100
-            console.log('User A deposit: '+c.userBalance(userA))
-            console.log('User A now has '+c.ULP[userA]+' ULP')
-            console.log('Total ULP: '+c.totalULP)
-            console.log('Total deposits: '+c.totalDeposits)
         })
         test('sum of stakes is consistent',()=>{
             expect(c.userBalance(userA) + c.userBalance(userB) + c.userBalance(userC) + c.userBalance(userD)).toBeCloseTo(c.getTotalDeposits(), 1)
