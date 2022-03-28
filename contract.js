@@ -50,21 +50,50 @@ module.exports = class Contract {
 
     deposit(user, amount, currentBlock) {
         this._updateDeposit(user, currentBlock)
+        // note: user's actual fair reward may differ from these calculations because new deposits
+        // in the same reward interval will change the total expected deposit age, so there's no way
+        // to reliably & precisely predict the correct reward distribution, but this approach still
+        // provides results good enough and remains practical
+
+        let blocksTillReward = this.expectedRewardBlock - currentBlock
+        // total deposit age we expected by the end of reward interval before this deposit
+        let totalExpectedDepositAgePrev = this.totalDepositAge + this.totalDeposits * blocksTillReward
+        // how much higher the deposit age is now expected to be by the end of reward interval
+        let addedExpectedDepositAge = amount * blocksTillReward
+        // new expected total deposit age
+        let totalExpectedDepositAge = totalExpectedDepositAgePrev + addedExpectedDepositAge
+        
         // update deposit amounts
         this.userDeposits[user] += amount
         this.totalDeposits += amount
-        // calculate newly added expected deposit age to get user's added share
-        let addedExpectedDepositAge = amount * (this.expectedRewardBlock - currentBlock)
-        let totalExpectedDepositAge = this.totalDepositAge + this.totalDeposits * (this.expectedRewardBlock - currentBlock)
-        // TODO: their actual reward will differ because deposits after him will change total expected deposit age!
-        let userAddedExpectedReward = (addedExpectedDepositAge / totalExpectedDepositAge) * this.expectedReward
-        let userAddedShare = (amount + userAddedExpectedReward) / (this.totalDeposits + this.expectedReward)
-        // mint ULP tokens to represent the added share
+        
+        // expected reward will increase proportionally to the increase of total expected deposit age
+        if (totalExpectedDepositAgePrev > 0) {
+            this.expectedReward *= (totalExpectedDepositAgePrev + addedExpectedDepositAge) / totalExpectedDepositAgePrev
+        }
+
+        // mint ULP tokens
         let newULP
         if (this.totalULP == 0) {
             newULP = 1.0
         } else {
-            newULP = this.totalULP * userAddedShare / (1 - userAddedShare)
+            // user's new expected deposit age by the end of the reward interval
+            let userExpectedDepositAge = this.userDepositAge[user] + this.userDeposits[user] * blocksTillReward
+            // reward the user is now expected to receive by the end of reward interval
+            let userExpectedReward = this.expectedReward * userExpectedDepositAge / totalExpectedDepositAge
+            // new estimated user's share of total deposit after the nearest reward
+            let userNewShare = (this.userDeposits[user] + userExpectedReward) / (this.totalDeposits + this.expectedReward)
+            // amount of ULP tokens to mint to represent the new user's share
+            if (!this.ULP[user]) {
+                // by solving the equation: userNewShare = newULP / (this.totalULP + newULP)
+                newULP = this.totalULP * userNewShare / (1 - userNewShare)
+            } else if (userNewShare == 1) {
+                // by solving the equation: (this.totalULP + newULP) / this.totalULP = this.userDeposits[user] / (this.userDeposits[user] - amount)
+                newULP = this.totalULP * (this.userDeposits[user] / (this.userDeposits[user] - amount) - 1)
+            } else {
+                // by solving the equation: userNewShare = (this.ULP[user] + newULP) / (this.totalULP + newULP)
+                newULP = (userNewShare * this.totalULP - this.ULP[user]) / (1 - userNewShare)
+            }
         }
         this.ULP[user] = (this.ULP[user]||0) + newULP
         this.totalULP += newULP
@@ -76,22 +105,39 @@ module.exports = class Contract {
             return console.error('Not enough balance: user '+user+' has '+this.userBalance(user)+' but tried to withdraw '+amount)
         }
         this._updateDeposit(user, currentBlock)
+
+        let blocksTillReward = this.expectedRewardBlock - currentBlock
+        // total deposit age we expected by the end of reward interval before this withdrawal
+        let totalExpectedDepositAgePrev = this.totalDepositAge + this.totalDeposits * blocksTillReward
+        // how much lower the deposit age is now expected to be by the end of reward interval
+        let removedExpectedDepositAge = amount * blocksTillReward
+        // new expected total deposit age
+        let totalExpectedDepositAge = totalExpectedDepositAgePrev - removedExpectedDepositAge
+        
         // update deposit amounts
         this.userDeposits[user] -= amount
         this.totalDeposits -= amount
-        // count deposit age already provided by the user in the current distribution interval
-        let userExpectedDepositAge = this.userDepositAge[user] + this.userDeposits[user] * (this.expectedRewardBlock - currentBlock)
-        let totalExpectedDepositAge = this.totalDepositAge + this.totalDeposits * (this.expectedRewardBlock - currentBlock)
-        // calculate user's fair share of total when the next reward arrives
-        let userExpectedReward = (userExpectedDepositAge / totalExpectedDepositAge) * this.expectedReward
-        let userShare = (this.userDeposits[user] + userExpectedReward) / (this.totalDeposits + this.expectedReward)
+        // expected reward will decrease proportionally to the decrease of total expected deposit age
+        this.expectedReward *= (totalExpectedDepositAgePrev - removedExpectedDepositAge) / totalExpectedDepositAgePrev
+
+        // user's new expected deposit age by the end of the reward interval
+        let userExpectedDepositAge = this.userDepositAge[user] + this.userDeposits[user] * blocksTillReward
+        // reward the user is now expected to receive by the end of reward interval
+        let userExpectedReward = this.expectedReward * userExpectedDepositAge / totalExpectedDepositAge
+        // new estimated user's share of total deposit after the nearest reward
+        let userNewShare = (this.userDeposits[user] + userExpectedReward) / (this.totalDeposits + this.expectedReward)
+        // user's old share of total, based on their ULP tokens
+        let userOldShare = this.ULP[user] / this.totalULP
+
+        // burn ULP tokens to reduce user's share to the new value
         let burntULP
-        if (userShare == 1) {
-            // if the user is the only depositor in the pool, just reduce his ULP tokens proportionally
+        if (userOldShare == 1) {
+            // if the user is the only depositor in the pool, just reduce their ULP tokens proportionally
             burntULP = this.totalULP * amount / (this.userDeposits[user] + amount)
         } else {
             // leave user's fair share of ULP and burn the rest
-            burntULP = (this.ULP[user] - userShare * this.totalULP)/(1 - userShare)
+            // by solving the equation: userNewShare = (this.ULP[user] - burntULP) / (this.totalULP - burntULP)
+            burntULP = (this.ULP[user] - userNewShare * this.totalULP)/(1 - userNewShare)
         }
         this.totalULP -= burntULP
         this.ULP[user] -= burntULP
