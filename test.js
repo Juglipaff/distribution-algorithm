@@ -976,4 +976,80 @@ describe('random scenarios', () => {
             expect(rewardA2 + rewardB2 + rewardC2 + rewardD2).toBeCloseTo(amount1 + amount2 + amount3 + reward1 - amount5 + amount6 + amount7 + reward2, 8)
         })
     })
+    describe('sum of tokens is consistent after wrong ExpectedRewards',()=>{
+        const amount1 = 500
+        const amount2 = 700
+        const reward = 2000
+        const block1 = 20
+        const block2 = 40
+        const block3 = 45
+    
+        let stakeA = 0
+        let stakeB = 0
+        let totalDeposits = 0
+    
+        beforeEach(() => {
+            c.deposit(userA, amount1, block1)    
+            c.setExpectedReward(100, 22)
+            c.deposit(userB, amount2, block2)    
+            c.setExpectedReward(200, 60)
+            c.distribute(reward, block3)        
+            stakeA = c.userBalance(userA)
+            stakeB = c.userBalance(userB)
+            totalDeposits = c.getTotalDeposits()
+        })
+        test('sum of rewards after the first distribution is consistent',()=>{
+            expect(stakeA + stakeB).toBeCloseTo(totalDeposits, 8)
+            expect(stakeA + stakeB).toBeCloseTo(amount1 + amount2 + reward, 8)
+        })
+        test('user stakes are positive',()=>{
+            const stakeAIsPositive = (stakeA >= 0)
+            const stakeBIsPositive = (stakeB >= 0)
+            expect(stakeAIsPositive).toBe(true, 8)
+            expect(stakeBIsPositive).toBe(true, 8)
+        })
+    })
+    describe('deposits after distribution doesnt affect existing stakes',()=>{
+        const amount1 = 500
+        const amount2 = 700
+        const reward = 2000
+        const amount4 = 200
+        const block1 = 20
+        const block2 = 40
+        const block3 = 45
+        const block4 = 50
+    
+        let stakeA = 0
+        let stakeB = 0
+        let totalDeposits = 0
+
+        let stakeA1 = 0
+        let stakeB1 = 0
+        let totalDeposits1 = 0
+    
+        beforeEach(() => {
+            c.deposit(userA, amount1, block1)    
+            c.setExpectedReward(reward, block3)
+            c.deposit(userB, amount2, block2)    
+            c.distribute(reward, block3)        
+            stakeA = c.userBalance(userA)
+            stakeB = c.userBalance(userB)
+            totalDeposits = c.getTotalDeposits()
+            c.deposit(userA, amount4, block4)    
+            stakeA1 = c.userBalance(userA)
+            stakeB1 = c.userBalance(userB)
+            totalDeposits1 = c.getTotalDeposits()
+        })
+        test('sum of rewards after the first distribution is consistent',()=>{
+            expect(stakeA + stakeB).toBeCloseTo(totalDeposits, 8)
+            expect(stakeA + stakeB).toBeCloseTo(amount1 + amount2 + reward, 8)
+        })
+        test('userB stakes are consistent',()=>{
+            expect(stakeB).toBeCloseTo(stakeB1, 8)
+        })
+        test('stakes are consistent',()=>{
+            expect(stakeA1+stakeB1).toBeCloseTo(totalDeposits1, 8)
+        })
+    })
+        
 })

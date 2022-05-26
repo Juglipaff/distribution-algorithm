@@ -13,6 +13,7 @@ module.exports = class Contract {
         this.ULP = {}
         this.lastRewardBlock = 0
         this.setExpectedReward(0, 100)
+        this.lastRewardPeriod = 100
     }
 
     setExpectedReward(amount, block){
@@ -55,7 +56,12 @@ module.exports = class Contract {
         // to reliably & precisely predict the correct reward distribution, but this approach still
         // provides results good enough and remains practical
 
-        let blocksTillReward = this.expectedRewardBlock - currentBlock
+        let blocksTillReward
+        if( this.expectedRewardBlock >= currentBlock){
+            blocksTillReward =  this.expectedRewardBlock - currentBlock;
+        } else {
+            blocksTillReward = this.lastRewardPeriod / 2;
+        }
         // total deposit age we expected by the end of reward interval before this deposit
         let totalExpectedDepositAgePrev = this.totalDepositAge + this.totalDeposits * blocksTillReward
         // how much higher the deposit age is now expected to be by the end of reward interval
@@ -106,7 +112,12 @@ module.exports = class Contract {
         }
         this._updateDeposit(user, currentBlock)
 
-        let blocksTillReward = this.expectedRewardBlock - currentBlock
+        let blocksTillReward
+        if( this.expectedRewardBlock >= currentBlock){
+            blocksTillReward =  this.expectedRewardBlock - currentBlock;
+        } else {
+            blocksTillReward = this.lastRewardPeriod / 2;
+        }
         // total deposit age we expected by the end of reward interval before this withdrawal
         let totalExpectedDepositAgePrev = this.totalDepositAge + this.totalDeposits * blocksTillReward
         // how much lower the deposit age is now expected to be by the end of reward interval
@@ -153,8 +164,8 @@ module.exports = class Contract {
         this.userDepositChanged = {}
         
         // to avoid having negative expected reward time we set expected reward block right here based on the previous reward time
-        let lastRewardPeriod = currentBlock - this.lastRewardBlock
-        this.setExpectedReward(reward, currentBlock + lastRewardPeriod)
+        this.lastRewardPeriod = currentBlock - this.lastRewardBlock
+        this.setExpectedReward(reward, currentBlock + this.lastRewardPeriod)
         this.lastRewardBlock = currentBlock
     }
 
