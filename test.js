@@ -857,7 +857,6 @@ describe('random scenarios', () => {
         const amount1 = 500
         const amount2 = 700
         const reward = 2000
-        const amount4 = 200
         const block1 = 20
         const block2 = 40
         const block3 = 45
@@ -869,10 +868,8 @@ describe('random scenarios', () => {
             contract.deposit(userA, amount1, block1)    
             contract.deposit(userB, amount2, block2)    
             contract.distribute(reward, block3)        
-            totalDeposits = contract.getTotalDeposits()
             contract.withdraw(userA, contract.userBalance(userA), block4)    
             contract.withdraw(userB, contract.userBalance(userB), block5)    
-            totalDeposits = contract.getTotalDeposits()
             totalDepositsVar = contract.totalDeposits
         })
         test('total deposits are positive',()=>{
