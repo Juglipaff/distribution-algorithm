@@ -810,4 +810,74 @@ describe('random scenarios', () => {
             expect(contract.userBalance(userA) + contract.userBalance(userB)).toBeCloseTo(400, 8)
         })
     })
+    describe('deposits after distribution doesnt affect existing stakes',()=>{
+        const amount1 = 500
+        const amount2 = 700
+        const reward = 2000
+        const amount4 = 200
+        const block1 = 20
+        const block2 = 40
+        const block3 = 45
+        const block4 = 50
+    
+        let stakeA = 0
+        let stakeB = 0
+        let totalDeposits = 0
+
+        let stakeA1 = 0
+        let stakeB1 = 0
+        let totalDeposits1 = 0
+    
+        beforeEach(() => {
+            contract.deposit(userA, amount1, block1)    
+            contract.deposit(userB, amount2, block2)    
+            contract.distribute(reward, block3)        
+            stakeA = contract.userBalance(userA)
+            stakeB = contract.userBalance(userB)
+            totalDeposits = contract.getTotalDeposits()
+            contract.deposit(userA, amount4, block4)    
+            stakeA1 = contract.userBalance(userA)
+            stakeB1 = contract.userBalance(userB)
+            totalDeposits1 = contract.getTotalDeposits()
+        })
+        test('sum of rewards after the first distribution is consistent',()=>{
+            expect(stakeA + stakeB).toBeCloseTo(totalDeposits, 8)
+            expect(stakeA + stakeB).toBeCloseTo(amount1 + amount2 + reward, 8)
+        })
+        test('userB stakes are consistent',()=>{
+            expect(stakeB).toBeCloseTo(stakeB1, 8)
+        })
+        test('stakes are consistent',()=>{
+            expect(stakeA1 + stakeB1).toBeCloseTo(totalDeposits1, 8)
+            expect(stakeA1 + stakeB1).toBeCloseTo(amount1 + amount2 + reward + amount4, 8)
+        })
+    })
+
+    describe('deposits after distribution doesnt affect existing stakes',()=>{
+        const amount1 = 500
+        const amount2 = 700
+        const reward = 2000
+        const amount4 = 200
+        const block1 = 20
+        const block2 = 40
+        const block3 = 45
+        const block4 = 50
+        const block5 = 55
+
+        let totalDepositsVar = 0
+        beforeEach(() => {
+            contract.deposit(userA, amount1, block1)    
+            contract.deposit(userB, amount2, block2)    
+            contract.distribute(reward, block3)        
+            totalDeposits = contract.getTotalDeposits()
+            contract.withdraw(userA, contract.userBalance(userA), block4)    
+            contract.withdraw(userB, contract.userBalance(userB), block5)    
+            totalDeposits = contract.getTotalDeposits()
+            totalDepositsVar = contract.totalDeposits
+        })
+        test('total deposits are positive',()=>{
+            const totalDepositsArePositive = (totalDepositsVar >= 0)
+            expect(totalDepositsArePositive).toBe(true, 8)
+        })
+    })
 })
