@@ -113,6 +113,7 @@ module.exports = class Contract {
     }
 
     userBalance(user) {
+        this._initJSVariables(user)
         return this.userDeposit[user] + this.userReward(user)
     }
 
