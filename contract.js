@@ -1,123 +1,116 @@
 module.exports = class Contract {
     constructor() {
-        this.userDeposit = {}
         this.totalDeposits = 0
         this.totalDepositLastUpdated = 0
-        this.userDepositLastUpdated={}
-
         this.totalDepositAge = 0
-        this.userDepositAge = {}
-        this.userDepositChanged = {}
 
-        this.rewards = {}
-        this.cumulativeRewards = 0
+        this.cumulativeReward = 0
 
         this.distributionID = 0
-        this.distributionIDForUser = {}
 
-        this.K = {}
-        this.L = {}
-        this.distributions = {}
+        this.distributionData = {}
+        this.userData = {}
     }
 
-    _initJSVariables(user){
-        if(this.userDepositChanged[user]===undefined){
-            this.userDepositChanged[user] = {}
-        }
-        if(this.userDepositAge[user] === undefined){
-            this.userDepositAge[user] = 0
-            this.userDeposit[user] = 0
-            this.distributionIDForUser[user] = 0
-            this.userDepositLastUpdated[user] = 0
-            this.rewards[user] = 0
+    _initJSVariables(address){
+        if(this.userData[address] === undefined){
+            this.userData[address] = {}
+            this.userData[address].depositAge = 0
+            this.userData[address].deposit = 0
+            this.userData[address].lastDistribution = 0
+            this.userData[address].depositLastUpdated = 0
+            this.userData[address].reward = 0
         }
     }
 
-    _updateDeposit(user, currentBlock) {
-        this._initJSVariables(user)
+    _updateDeposit(address, currentBlock) {
+        this._initJSVariables(address)
 
+        /*storage*/const user = this.userData[address]
         // accumulate deposit age within the current distribution interval
-        if(this.userDepositChanged[user][this.distributionID]){
+        if(user.lastDistribution === this.distributionID){
             // add deposit age from previous deposit update till now
-            this.userDepositAge[user] += this.userDeposit[user] * (currentBlock - this.userDepositLastUpdated[user])
+            user.depositAge += user.deposit * (currentBlock - user.depositLastUpdated)
         }else{
             // a reward has been distributed, update user reward
-            this.rewards[user] += this.userReward(user) 
+            user.reward += this.userReward(address) 
             // count fresh deposit age from that reward distribution till now
-            this.userDepositAge[user] = this.userDeposit[user] * (currentBlock - (this.distributions[this.distributionID - 1]||0))
-            this.userDepositChanged[user][this.distributionID] = true
+            user.depositAge = user.deposit * (currentBlock - (this.distributionData[this.distributionID - 1]?.block||0))
         }
         // same with total deposit age
         this.totalDepositAge += this.totalDeposits*(currentBlock - this.totalDepositLastUpdated)
 
-        this.userDepositLastUpdated[user] = currentBlock
+        user.depositLastUpdated = currentBlock
         this.totalDepositLastUpdated = currentBlock
         
-        this.distributionIDForUser[user] = this.distributionID
+        user.lastDistribution = this.distributionID
+
+        //redundant in solidity
+        this.userData[address] = user
     }
 
-    deposit(user, amount, currentBlock) {
-        this._updateDeposit(user, currentBlock)
+    deposit(address, amount, currentBlock) {
+        this._updateDeposit(address, currentBlock)
         // update deposit amounts
-        this.userDeposit[user] += amount
+        this.userData[address].deposit += amount
         this.totalDeposits += amount 
     }
 
-    withdraw(user, amount, currentBlock) {
-        this._updateDeposit(user, currentBlock)
+    withdraw(address, amount, currentBlock) {
+        this._updateDeposit(address, currentBlock)
         // update deposit amounts
-        this.userDeposit[user] -= amount
-        //if totalDeposits gets below 0 subtract leftover amount from cumulativeRewards
+        this.userData[address].deposit -= amount
+        //if totalDeposits gets below 0 subtract leftover amount from cumulativeReward
         if(amount > this.totalDeposits){
             const leftover = amount - this.totalDeposits
             this.totalDeposits = 0
-            this.cumulativeRewards -= leftover
+            this.cumulativeReward -= leftover
         } else {
             this.totalDeposits -= amount
         }
     }
 
     distribute(reward, currentBlock) {
-        // reward per deposit age
-        const _K = reward/(this.totalDepositAge + this.totalDeposits*(currentBlock - this.totalDepositLastUpdated))
-        // write Ks to the mapping on each distribution.
-        this.K[this.distributionID] = _K
-        // write L sums to the mapping on each distribution. We use it to calculate the sum of Ls between the last distribution and the distribution that has happened after the last user deposit
-        this.L[this.distributionID] = (this.L[this.distributionID - 1] || 0) + _K * (currentBlock - (this.distributions[this.distributionID - 1]||0))
-        // write each distribution block to the mapping.
-        this.distributions[this.distributionID] = currentBlock
+        const _rewardPerTotalDepositAge = reward/(this.totalDepositAge + this.totalDeposits*(currentBlock - this.totalDepositLastUpdated))
+        // on each distribution we write rewardPerTotalDepositAge, cumulativeRewardAgePerTotalDepositAge and distribution block to the mapping
+        this.distributionData[this.distributionID] = {
+            rewardPerTotalDepositAge: _rewardPerTotalDepositAge,
+            cumulativeRewardAgePerTotalDepositAge : (this.distributionData[this.distributionID - 1]?.cumulativeRewardAgePerTotalDepositAge||0) +  _rewardPerTotalDepositAge * (currentBlock - (this.distributionData[this.distributionID - 1]?.block||0)),
+            block:currentBlock
+        }
 
         //update distribution id
         this.distributionID += 1
 
         this.totalDepositLastUpdated = currentBlock
-        // cumulativeRewards provides us a way to get total deposits and to not get below 0 in totalDeposits calculations
-        this.cumulativeRewards += reward
+        // cumulativeRewars provides us a way to get total deposits and to not get below 0 in totalDeposits withdrawal calculations
+        this.cumulativeReward += reward
         //flush totalDepositAge
         this.totalDepositAge = 0
     }
 
-    userReward(user) {
-        this._initJSVariables(user)
-        if(this.userDepositChanged[user][this.distributionID]){
+    userReward(address) {
+        this._initJSVariables(address)
+        /*storage*/const user = this.userData[address]
+        if(user.lastDistribution === this.distributionID){
             //return reward if the distribution after the last user deposit did not happen yet
-            return this.rewards[user]
-        }else{
-            const _userDepositAge = this.userDepositAge[user] + this.userDeposit[user] * ((this.distributions[this.distributionIDForUser[user]]||0) - this.userDepositLastUpdated[user])
-            //calculate reward between the last user deposit and the distribution after that
-            const rewardsBeforeDistibution = _userDepositAge * (this.K[this.distributionIDForUser[user]]||0)
-            //calculate reward after the distribution that has happened after the last user deposit
-            const rewardsAfterDistribution = this.userDeposit[user] * ((this.L[this.distributionID - 1]||0) - (this.L[this.distributionIDForUser[user]]||0))
-            return this.rewards[user] + rewardsBeforeDistibution + rewardsAfterDistribution
+            return user.reward
         }
+        const userDistributionData = this.distributionData[user.lastDistribution]
+        const _userDepositAge = user.depositAge + user.deposit * ((userDistributionData?.block||0) - user.depositLastUpdated)
+        //calculate reward between the last user deposit and the distribution after that
+        const rewardBeforeDistibution = _userDepositAge * (userDistributionData?.rewardPerTotalDepositAge||0)
+        //calculate reward after the distribution that has happened after the last user deposit
+        const rewardAfterDistribution = user.deposit * ((this.distributionData[this.distributionID - 1]?.cumulativeRewardAgePerTotalDepositAge||0) - (userDistributionData?.cumulativeRewardAgePerTotalDepositAge||0))
+        return user.reward + rewardBeforeDistibution + rewardAfterDistribution
     }
 
-    userBalance(user) {
-        this._initJSVariables(user)
-        return this.userDeposit[user] + this.userReward(user)
+    userBalance(address) {
+        this._initJSVariables(address)
+        return this.userData[address].deposit + this.userReward(address)
     }
 
     getTotalDeposits() {
-        return this.cumulativeRewards + this.totalDeposits
+        return this.cumulativeReward + this.totalDeposits
     }
 }
