@@ -6,7 +6,7 @@ module.exports = class Contract {
 
         this.cumulativeReward = 0
 
-        this.distributionID = 0
+        this.distributionID = 1
 
         this.distributionData = {}
         this.userData = {}
@@ -58,16 +58,22 @@ module.exports = class Contract {
 
     withdraw(address, amount, currentBlock) {
         this._updateDeposit(address, currentBlock)
-        // update deposit amounts
-        this.userData[address].deposit -= amount
-        //if totalDeposits gets below 0 subtract leftover amount from cumulativeReward
-        if(amount > this.totalDeposits){
-            const leftover = amount - this.totalDeposits
-            this.totalDeposits = 0
-            this.cumulativeReward -= leftover
+        
+        /*storage*/const user = this.userData[address]
+        // Subtract amount from user.reward first, then subtract remainder from user.deposit.
+        if(amount > user.reward){
+            user.deposit = user.deposit + user.reward - amount;
+            this.totalDeposits =  this.totalDeposits + user.reward - amount;
+            this.cumulativeReward -= user.reward;
+
+            user.reward = 0;
         } else {
-            this.totalDeposits -= amount
+            user.reward -= amount;
+            this.cumulativeReward -= amount;
         }
+
+        //redundant in solidity
+        this.userData[address] = user
     }
 
     distribute(reward, currentBlock) {
@@ -83,7 +89,7 @@ module.exports = class Contract {
         this.distributionID += 1
 
         this.totalDepositLastUpdated = currentBlock
-        // cumulativeRewars provides us a way to get total deposits and to not get below 0 in totalDeposits withdrawal calculations
+        // cumulativeReward provides us a way to get total deposits and to not get below 0 in totalDeposits withdrawal calculations
         this.cumulativeReward += reward
         //flush totalDepositAge
         this.totalDepositAge = 0
