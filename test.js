@@ -992,18 +992,63 @@ describe('random scenarios', () => {
         const block4 = 50
         const block5 = 55
 
-        let totalDepositsVar = 0
         beforeEach(() => {
             c.deposit(userA, amount1, block1)    
             c.deposit(userB, amount2, block2)    
             c.distribute(reward, block3)        
             c.withdraw(userA, c.userBalance(userA), block4)    
             c.withdraw(userB, c.userBalance(userB), block5)    
-            totalDepositsVar = c.totalDeposits
         })
         test('total deposits are positive',()=>{
-            const totalDepositsArePositive = (totalDepositsVar >= 0)
+            const totalDepositsArePositive = (c.totalDeposits >= 0)
             expect(totalDepositsArePositive).toBe(true, 8)
+        })
+        test('cumulativeReward are positive',()=>{
+            const cumulativeRewardArePositive = (c.cumulativeReward >= 0)
+            expect(cumulativeRewardArePositive).toBe(true, 8)
+        })
+    })    
+
+    describe('total deposits remain positive after reward withdrawal',()=>{
+        const amount1 = 500
+        const amount2 = 700
+        const reward = 2000
+        const block1 = 20
+        const block2 = 40
+        const block3 = 45
+        const block4 = 50
+        const block5 = 55
+
+        beforeEach(() => {
+            c.deposit(userA, amount1, block1)    
+            c.deposit(userB, amount2, block2)    
+            c.distribute(reward, block3)        
+            c.withdraw(userA, c.userBalance(userA), block4)    
+            c.withdraw(userB, c.userBalance(userB), block5)    
+        })
+        test('total deposits are positive',()=>{
+            const totalDepositsArePositive = (c.totalDeposits >= 0)
+            expect(totalDepositsArePositive).toBe(true, 8)
+        })
+        test('cumulativeReward are positive',()=>{
+            const cumulativeRewardArePositive = (c.cumulativeReward >= 0)
+            expect(cumulativeRewardArePositive).toBe(true, 8)
+        })
+    })    
+
+    describe('cumulative rewards remain positive',()=>{
+        beforeEach(() => {
+            c.deposit(userA, 500, 1)    
+            c.deposit(userB, 700, 2)    
+            c.distribute(2000, 3)        
+            c.withdraw(userB, c.userBalance(userB)/2, 4)   
+            c.deposit(userB, 700, 5)   
+            c.distribute(1000, 6)  
+            console.log('reward0',c.userReward(userB))
+            c.withdraw(userB, c.userBalance(userB), 7)        
+        })
+        test('cumulativeReward are consistent',()=>{
+            expect(c.cumulativeReward).toBeCloseTo(c.userReward(userA) + c.userReward(userB), 8)
         })
     })    
 })

@@ -33,7 +33,7 @@ module.exports = class Contract {
             user.depositAge += user.deposit * (currentBlock - user.depositLastUpdated)
         }else{
             // a reward has been distributed, update user reward
-            user.reward += this.userReward(address) 
+            user.reward = this.userReward(address) 
             // count fresh deposit age from that reward distribution till now
             user.depositAge = user.deposit * (currentBlock - (this.distributionData[this.distributionID - 1]?.block||0))
         }
@@ -58,18 +58,17 @@ module.exports = class Contract {
 
     withdraw(address, amount, currentBlock) {
         this._updateDeposit(address, currentBlock)
-        
         /*storage*/const user = this.userData[address]
         // Subtract amount from user.reward first, then subtract remainder from user.deposit.
         if(amount > user.reward){
-            user.deposit = user.deposit + user.reward - amount;
-            this.totalDeposits =  this.totalDeposits + user.reward - amount;
-            this.cumulativeReward -= user.reward;
+            user.deposit = user.deposit + user.reward - amount
+            this.totalDeposits =  this.totalDeposits + user.reward - amount
 
+            this.cumulativeReward -= user.reward
             user.reward = 0;
         } else {
-            user.reward -= amount;
-            this.cumulativeReward -= amount;
+            user.reward -= amount
+            this.cumulativeReward -= amount
         }
 
         //redundant in solidity
