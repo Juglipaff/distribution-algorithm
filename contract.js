@@ -88,7 +88,7 @@ module.exports = class Contract {
         this.distributionID += 1
 
         this.totalDepositLastUpdated = currentBlock
-        // cumulativeReward provides us a way to get total deposits and to not get below 0 in totalDeposits withdrawal calculations
+        // cumulativeReward provides us a way to get total deposits
         this.cumulativeReward += reward
         //flush totalDepositAge
         this.totalDepositAge = 0
